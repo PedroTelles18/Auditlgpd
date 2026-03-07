@@ -111,12 +111,12 @@ export default function LoginPage() {
           </div>
 
           <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-white mb-3">
-            Audit
+            Priv
             <span
               className="text-accent"
               style={{ textShadow: "0 0 30px #00e5ff" }}
             >
-              LGPD
+              yon
             </span>
           </h1>
 
