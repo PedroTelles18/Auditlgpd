@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import auth, analyze
+from app.routers import auth, analyze, db_audit
 
 # Cria tabelas no banco na inicialização
 Base.metadata.create_all(bind=engine)
@@ -35,6 +35,7 @@ app.add_middleware(
 # Rotas
 app.include_router(auth.router)
 app.include_router(analyze.router)
+app.include_router(db_audit.router)
 
 
 @app.get("/", tags=["Health"])
