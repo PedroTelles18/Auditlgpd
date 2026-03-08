@@ -7,7 +7,7 @@ import {
   Info, CheckCircle, ChevronDown, ChevronRight,
   Loader2, ArrowLeft, Lock, Server
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -60,8 +60,9 @@ const SEVERITY_CONFIG = {
 };
 
 export default function DBauditPage() {
-  const { token } = useAuth();
+  
   const router = useRouter();
+  const token = Cookies.get("access_token");
 
   const [dbType, setDbType] = useState("postgresql");
   const [host, setHost] = useState("");
