@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #080c10;
+  --accent: #00e5ff;
+}
+
+body {
+  background-color: var(--bg);
+  color: #cdd9e5;
+}
+
+/* Grid background global */
+.grid-bg {
+  background-image:
+    linear-gradient(#1e2d3d 1px, transparent 1px),
+    linear-gradient(90deg, #1e2d3d 1px, transparent 1px);
+  background-size: 40px 40px;
+}
