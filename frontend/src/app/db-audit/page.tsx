@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import {
   Database, Shield, AlertTriangle, AlertCircle,
   Info, CheckCircle, ChevronDown, ChevronRight,
-  Loader2, ArrowLeft, Lock, Server
+  Loader2, ArrowLeft, Lock, Server, Download
 } from "lucide-react";
 import Cookies from "js-cookie";
-import { Loader2, Download } from "lucide-react";
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
