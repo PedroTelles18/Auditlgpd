@@ -22,8 +22,8 @@ const NAV = [
   { icon: FileCode2,       label: "Análise de Código",  href: "/analyze" },
   { icon: Database,        label: "Auditoria de Banco", href: "/db-audit" },
   { icon: FileText,        label: "Relatórios",         href: "/dashboard" },
-  { icon: Bell,            label: "Alertas",            href: "/dashboard" },
-  { icon: Settings,        label: "Configurações",      href: "/dashboard" },
+  { icon: Bell,            label: "Alertas",            href: "/alerts" },
+  { icon: Settings,        label: "Configurações",      href: "/settings" },
 ];
 
 const SEV_COLOR: Record<string, string> = {
