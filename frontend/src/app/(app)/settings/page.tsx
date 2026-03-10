@@ -7,53 +7,8 @@ import {
   FileCode2, Database, FileText, Bell, LayoutDashboard,
   User, Key, Shield, Moon, Globe, Save, CheckCircle2, Eye, EyeOff,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 
-function Sidebar({ router, logout, user }: { router: ReturnType<typeof useRouter>; logout: () => void; user: { name: string; role: string } }) {
-  const NAV = [
-    { icon: LayoutDashboard, label: "Dashboard",          href: "/dashboard" },
-    { icon: FileCode2,        label: "Análise de Código",  href: "/analyze" },
-    { icon: Database,         label: "Auditoria de Banco", href: "/db-audit" },
-    { icon: FileText,         label: "Relatórios",         href: "/reports" },
-    { icon: Bell,             label: "Alertas",            href: "/alerts" },
-    { icon: Settings,         label: "Configurações",      href: "/settings" },
-  ];
-  return (
-    <aside className="hidden lg:flex flex-col border-r border-border flex-shrink-0" style={{ width: 220, background: "#070b0f" }}>
-      <div className="flex items-center gap-2.5 px-5 h-[52px] border-b border-border">
-        <ShieldCheck size={18} className="text-accent" />
-        <span className="font-bold text-white tracking-tight text-sm">Priv<span className="text-accent">yon</span></span>
-      </div>
-      <nav className="flex-1 py-4 px-3 flex flex-col gap-0.5">
-        {NAV.map(({ icon: Icon, label, href }) => {
-          const active = href === "/settings";
-          return (
-            <button key={label} onClick={() => router.push(href)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all w-full text-left ${active ? "text-white" : "text-text-dim hover:text-white hover:bg-white/[0.04]"}`}
-              style={active ? { background: "#00e5ff11" } : {}}>
-              <Icon size={15} className={active ? "text-accent" : ""} />
-              {label}
-              {active && <div className="ml-auto w-1 h-1 rounded-full bg-accent" />}
-            </button>
-          );
-        })}
-      </nav>
-      <div className="px-3 py-4 border-t border-border">
-        <div className="flex items-center gap-3 px-2 py-2 rounded-lg" style={{ background: "#ffffff05" }}>
-          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-black flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #00e5ff, #0099aa)" }}>
-            {user.name?.charAt(0).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold text-white truncate">{user.name}</p>
-            <p className="text-[9px] font-mono text-accent uppercase tracking-wider">{user.role}</p>
-          </div>
-          <button onClick={logout} className="text-text-dim hover:text-danger transition-colors"><LogOut size={13} /></button>
-        </div>
-      </div>
-    </aside>
-  );
-}
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -124,10 +79,7 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-bg text-[#cdd9e5] font-sans flex">
-      <div className="fixed inset-0 opacity-[0.07] pointer-events-none"
-        style={{ backgroundImage: "linear-gradient(#00e5ff 1px, transparent 1px), linear-gradient(90deg, #00e5ff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-      <Sidebar router={router} logout={logout} user={user} />
+    <div className="flex-1 flex flex-col min-w-0">
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-20 flex items-center justify-between px-6 border-b border-border"
           style={{ height: 52, background: "#070b0fee", backdropFilter: "blur(12px)" }}>

@@ -7,7 +7,7 @@ import {
   AlertTriangle, Loader2, ArrowLeft, File,
   ChevronRight, Clock, Download,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/auth";
 import Cookies from "js-cookie";
 
@@ -118,9 +118,7 @@ export default function AnalyzePage() {
   if (loading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-bg text-[#cdd9e5] font-sans">
-      <div className="fixed inset-0 opacity-20 pointer-events-none"
-        style={{ backgroundImage: "linear-gradient(#1e2d3d 1px, transparent 1px), linear-gradient(90deg, #1e2d3d 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+    <div className="flex-1 flex flex-col min-w-0">
 
       <nav className="sticky top-0 z-50 flex items-center justify-between px-6 border-b border-border"
         style={{ height: "52px", background: "#080c10ee", backdropFilter: "blur(12px)" }}>
