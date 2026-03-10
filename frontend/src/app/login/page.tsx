@@ -107,16 +107,16 @@ export default function LoginPage() {
               className="w-1.5 h-1.5 rounded-full bg-accent"
               style={{ boxShadow: "0 0 8px #00e5ff" }}
             />
-            Auditoria LGPD
+            Privyon
           </div>
 
           <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-white mb-3">
-            Audit
+            Priv
             <span
               className="text-accent"
               style={{ textShadow: "0 0 30px #00e5ff" }}
             >
-              LGPD
+              yon
             </span>
           </h1>
 
