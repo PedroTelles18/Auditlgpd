@@ -18,7 +18,6 @@ const NAV = [
   { icon: FileText,         label: "Relatórios",         href: "/reports" },
   { icon: Bell,             label: "Alertas",            href: "/alerts" },
   { icon: Settings,         label: "Configurações",      href: "/settings" },
-  { icon: User,            label: "Meu Perfil",         href: "/profile" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -68,9 +67,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* ── SIDEBAR (montado UMA vez, nunca re-monta) ── */}
       <aside
-        className={`fixed top-0 left-0 h-full z-30 flex flex-col border-r border-border transition-transform duration-200
-          ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static lg:flex`}
-        style={{ width: 220, background: "#070b0f", minHeight: "100vh" }}>
+        className={`fixed top-0 left-0 h-screen z-30 flex flex-col border-r border-border transition-transform duration-200
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}
+        style={{ width: 220, background: "#070b0f" }}>
 
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 h-[52px] border-b border-border flex-shrink-0">
@@ -100,7 +99,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* User */}
         <div className="px-3 py-4 border-t border-border flex-shrink-0">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg" style={{ background: "#ffffff05" }}>
+          <Link href="/profile" onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-3 px-2 py-2 rounded-lg transition-all hover:bg-white/[0.06] cursor-pointer"
+            style={{ background: "#ffffff05" }}>
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-black flex-shrink-0"
               style={{ background: "linear-gradient(135deg, #00e5ff, #0099aa)" }}>
               {user.name?.charAt(0).toUpperCase()}
@@ -109,15 +110,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <p className="text-[11px] font-semibold text-white truncate">{user.name}</p>
               <p className="text-[9px] font-mono text-accent uppercase tracking-wider">{user.role}</p>
             </div>
-            <button onClick={logout} className="text-text-dim hover:text-danger transition-colors flex-shrink-0">
-              <LogOut size={13} />
-            </button>
-          </div>
+          </Link>
+          <button onClick={logout}
+            className="w-full mt-2 flex items-center justify-center gap-2 py-1.5 rounded-lg text-[10px] font-mono text-text-dim hover:text-danger transition-all"
+            style={{ background: "#ffffff05" }}>
+            <LogOut size={11} /> Sair
+          </button>
         </div>
       </aside>
 
       {/* ── PAGE CONTENT ── */}
-      <div className="flex-1 flex flex-col min-w-0 page-enter">
+      <div className="flex-1 flex flex-col min-w-0 page-enter lg:ml-[220px]">
         {children}
       </div>
       {showTour && <OnboardingTour onFinish={() => setShowTour(false)} />}
