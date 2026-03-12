@@ -27,12 +27,32 @@ export default function ReportsPage() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [reports, setReports] = useState<ReportEntry[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
 
-  const [reports] = useState<ReportEntry[]>([
-    { id: "r1", type: "code", title: "Análise — app.py, models.py", date: "2026-03-10T08:30:00Z", findings: 4, score: 72, status: "warning" },
-    { id: "r2", type: "db",   title: "Auditoria — PostgreSQL prod", date: "2026-03-09T14:22:00Z", findings: 7, score: 48, status: "critical" },
-    { id: "r3", type: "code", title: "Análise — routes.ts, auth.ts", date: "2026-03-08T11:10:00Z", findings: 1, score: 91, status: "ok" },
-  ]);
+  useEffect(() => {
+    async function fetchHistory() {
+      try {
+        const token = Cookies.get("access_token");
+        const res = await fetch(`${API_URL}/history/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setReports(data.map((r: {id: string; audit_type: string; title: string; created_at: string; total_findings: number; score: number}) => ({
+            id: r.id,
+            type: r.audit_type as "code" | "db",
+            title: r.title,
+            date: r.created_at,
+            findings: r.total_findings,
+            score: Math.round(r.score),
+            status: r.score >= 80 ? "ok" : r.score >= 50 ? "warning" : "critical",
+          })));
+        }
+      } catch {} finally { setLoadingReports(false); }
+    }
+    fetchHistory();
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -65,8 +85,7 @@ export default function ReportsPage() {
   if (loading || !user) return null;
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
-      <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex-1 flex flex-col min-w-0 page-enter">
         <header className="sticky top-0 z-20 flex items-center justify-between px-6 border-b border-border flex-shrink-0"
           style={{ height: 52, background: "#070b0fee", backdropFilter: "blur(12px)" }}>
           <div className="flex items-center gap-3">
@@ -137,6 +156,5 @@ export default function ReportsPage() {
           </div>
         </main>
       </div>
-    </div>
   );
 }

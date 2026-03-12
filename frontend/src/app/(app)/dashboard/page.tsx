@@ -117,10 +117,29 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 50);
-    try {
-      const s = JSON.parse(localStorage.getItem("privyon_stats") || "{}");
-      setStats({ audits: s.audits||0, vulnerabilities: s.vulnerabilities||0, last_audit: s.last_audit||null });
-    } catch {}
+    // Try backend first, fallback to localStorage
+    const token = typeof window !== "undefined" ? document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1] : null;
+    if (token) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/history/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(r => r.ok ? r.json() : null).then(data => {
+        if (data) setStats({ audits: data.audits, vulnerabilities: data.vulnerabilities, last_audit: data.last_audit });
+        else {
+          const s = JSON.parse(localStorage.getItem("privyon_stats") || "{}");
+          setStats({ audits: s.audits||0, vulnerabilities: s.vulnerabilities||0, last_audit: s.last_audit||null });
+        }
+      }).catch(() => {
+        try {
+          const s = JSON.parse(localStorage.getItem("privyon_stats") || "{}");
+          setStats({ audits: s.audits||0, vulnerabilities: s.vulnerabilities||0, last_audit: s.last_audit||null });
+        } catch {}
+      });
+    } else {
+      try {
+        const s = JSON.parse(localStorage.getItem("privyon_stats") || "{}");
+        setStats({ audits: s.audits||0, vulnerabilities: s.vulnerabilities||0, last_audit: s.last_audit||null });
+      } catch {}
+    }
   }, []);
 
   useEffect(() => {

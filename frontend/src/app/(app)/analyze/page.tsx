@@ -37,7 +37,8 @@ const SEVERITY_COLOR = {
 };
 const ACCEPTED = [".py", ".js", ".ts", ".jsx", ".tsx", ".zip"];
 
-function saveStats(summary: AnalysisSummary) {
+async function saveHistory(summary: AnalysisSummary, token: string | undefined) {
+  // Save to localStorage as fallback
   try {
     const existing = JSON.parse(localStorage.getItem("privyon_stats") || "{}");
     localStorage.setItem("privyon_stats", JSON.stringify({
@@ -45,6 +46,25 @@ function saveStats(summary: AnalysisSummary) {
       vulnerabilities: (existing.vulnerabilities || 0) + summary.total_findings,
       last_audit: new Date().toISOString(),
     }));
+  } catch {}
+  // Save to Supabase via backend
+  try {
+    const filenames = summary.results.map(r => r.filename).join(", ");
+    await fetch(`${API_URL}/history/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        audit_type: "code",
+        title: `Análise — ${filenames.slice(0, 80)}`,
+        total_findings: summary.total_findings,
+        critical: summary.critical,
+        high: summary.high,
+        medium: summary.medium,
+        low: summary.low,
+        score: Math.max(0, 100 - summary.critical * 15 - summary.high * 8 - summary.medium * 3 - summary.low),
+        result_data: summary,
+      }),
+    });
   } catch {}
 }
 
@@ -87,7 +107,7 @@ export default function AnalyzePage() {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (e) => setProgress(30 + Math.round((e.loaded / (e.total || 1)) * 60)),
       });
-      setProgress(100); setResults(res.data); saveStats(res.data); setStatus("done");
+      setProgress(100); setResults(res.data); saveHistory(res.data, Cookies.get("access_token")); setStatus("done");
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
       setErrorMsg(msg || "Erro ao conectar com o servidor."); setStatus("error");
@@ -118,7 +138,7 @@ export default function AnalyzePage() {
   if (loading || !user) return null;
 
   return (
-    <div className="flex-1 flex flex-col min-w-0">
+    <div className="flex-1 flex flex-col min-w-0 page-enter">
 
       <nav className="sticky top-0 z-50 flex items-center justify-between px-6 border-b border-border"
         style={{ height: "52px", background: "#080c10ee", backdropFilter: "blur(12px)" }}>
@@ -231,7 +251,7 @@ export default function AnalyzePage() {
             </div>
 
             {results?.results.map((result) => (
-              <div key={result.filename} className="rounded-xl border border-border overflow-hidden mb-4" style={{ background: "#0d1117" }}>
+              <div key={result.filename} className="rounded-xl border border-border overflow-hidden mb-4 card-hover" style={{ background: "#0d1117" }}>
                 <div className="px-5 py-4 border-b border-border flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <FileCode2 size={14} className="text-accent" />

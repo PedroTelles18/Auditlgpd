@@ -122,7 +122,26 @@ export default function DBauditPage() {
 
       const data: AuditResult = await res.json();
       setResult(data);
-      try { const s = JSON.parse(localStorage.getItem("privyon_stats") || "{}"); localStorage.setItem("privyon_stats", JSON.stringify({ audits: (s.audits||0)+1, vulnerabilities: (s.vulnerabilities||0)+(data.total_findings||0), last_audit: new Date().toISOString() })); } catch {}
+      // Save locally
+try { const s = JSON.parse(localStorage.getItem("privyon_stats") || "{}"); localStorage.setItem("privyon_stats", JSON.stringify({ audits: (s.audits||0)+1, vulnerabilities: (s.vulnerabilities||0)+(data.total_findings||0), last_audit: new Date().toISOString() })); } catch {}
+      // Save to backend
+      try {
+        await fetch(`${API_URL}/history/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            audit_type: "db",
+            title: `Auditoria — ${database || "banco de dados"}`,
+            total_findings: data.total_findings || 0,
+            critical: data.findings_by_table?.reduce((s: number, t: {findings: {severity: string}[]}) => s + t.findings.filter((f: {severity: string}) => f.severity === "critical").length, 0) || 0,
+            high: data.findings_by_table?.reduce((s: number, t: {findings: {severity: string}[]}) => s + t.findings.filter((f: {severity: string}) => f.severity === "high").length, 0) || 0,
+            medium: data.findings_by_table?.reduce((s: number, t: {findings: {severity: string}[]}) => s + t.findings.filter((f: {severity: string}) => f.severity === "medium").length, 0) || 0,
+            low: data.findings_by_table?.reduce((s: number, t: {findings: {severity: string}[]}) => s + t.findings.filter((f: {severity: string}) => f.severity === "low").length, 0) || 0,
+            score: data.score || 0,
+            result_data: data,
+          }),
+        });
+      } catch {}
       setExpandedTables(new Set(data.table_audits.map((t) => t.table_name)));
     } catch (err: unknown) {
       setError((err as Error).message || "Erro inesperado");
