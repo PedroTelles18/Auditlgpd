@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   ShieldCheck, LogOut, LayoutDashboard, FileCode2,
-  Database, FileText, Bell, Settings,
+  Database, FileText, Bell, Settings, User,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { DashboardSkeleton } from "@/components/Skeleton";
+import OnboardingTour from "@/components/OnboardingTour";
 import Link from "next/link";
 
 const NAV = [
@@ -16,6 +18,7 @@ const NAV = [
   { icon: FileText,         label: "Relatórios",         href: "/reports" },
   { icon: Bell,             label: "Alertas",            href: "/alerts" },
   { icon: Settings,         label: "Configurações",      href: "/settings" },
+  { icon: User,            label: "Meu Perfil",         href: "/profile" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -23,18 +26,31 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
+    if (!loading && user) {
+      const onboarded = localStorage.getItem("privyon_onboarded");
+      if (!onboarded) setShowTour(true);
+    }
   }, [user, loading, router]);
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-bg flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-          <span className="text-xs font-mono text-text-dim">Carregando...</span>
-        </div>
+      <div className="min-h-screen bg-bg flex">
+        <div className="fixed inset-0 opacity-[0.07] pointer-events-none"
+          style={{ backgroundImage: "linear-gradient(#00e5ff 1px, transparent 1px), linear-gradient(90deg, #00e5ff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+        <aside className="hidden lg:flex flex-col border-r border-border flex-shrink-0" style={{ width: 220, background: "#070b0f" }}>
+          <div className="flex items-center gap-2.5 px-5 h-[52px] border-b border-border">
+            <div className="skeleton w-4 h-4 rounded" />
+            <div className="skeleton h-3 w-20" />
+          </div>
+          <div className="flex-1 py-4 px-3 flex flex-col gap-2">
+            {[...Array(6)].map((_,i) => <div key={i} className="skeleton h-8 rounded-lg" />)}
+          </div>
+        </aside>
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -101,9 +117,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ── PAGE CONTENT ── */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 page-enter">
         {children}
       </div>
+      {showTour && <OnboardingTour onFinish={() => setShowTour(false)} />}
     </div>
   );
 }

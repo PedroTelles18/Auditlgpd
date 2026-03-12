@@ -43,6 +43,19 @@ export default function LoginPage() {
     }
   }
 
+  async function loginDemo() {
+    setServerError(null);
+    try {
+      await login({ email: "demo@privyon.com.br", password: "demo1234" });
+      await refresh();
+      // Always show tour for demo
+      localStorage.removeItem("privyon_onboarded");
+      router.push("/dashboard");
+    } catch {
+      setServerError("Conta demo temporariamente indisponível.");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-bg overflow-hidden relative flex items-center justify-center">
       
@@ -326,6 +339,14 @@ export default function LoginPage() {
           </div>
           {/* Register link */}
           <p className="mt-4 text-center text-xs font-mono text-text-dim">
+            {/* Demo button */}
+            <button
+              type="button"
+              onClick={loginDemo}
+              className="w-full py-2 rounded-lg text-xs font-mono font-bold border border-border text-text-dim hover:text-white hover:border-[#2a3d52] transition-all mb-2"
+              style={{ background: "#060a0e" }}>
+              ▶ Entrar com conta demo
+            </button>
             Não tem conta?{" "}
             <a href="/register" className="text-accent-soft hover:text-accent transition-colors">
               Criar conta
