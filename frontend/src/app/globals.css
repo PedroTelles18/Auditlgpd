@@ -21,3 +21,107 @@ body {
     linear-gradient(90deg, #1e2d3d 1px, transparent 1px);
   background-size: 40px 40px;
 }
+
+/* ── Skeleton shimmer ─────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #0d1117 25%, #1e2d3d 50%, #0d1117 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* ── Page transitions ─────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.page-enter {
+  animation: fadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+/* ── Staggered children ───────────────────────────────── */
+.stagger > * { opacity: 0; animation: fadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.stagger > *:nth-child(1)  { animation-delay: 0.05s; }
+.stagger > *:nth-child(2)  { animation-delay: 0.10s; }
+.stagger > *:nth-child(3)  { animation-delay: 0.15s; }
+.stagger > *:nth-child(4)  { animation-delay: 0.20s; }
+.stagger > *:nth-child(5)  { animation-delay: 0.25s; }
+.stagger > *:nth-child(6)  { animation-delay: 0.30s; }
+
+/* ── Card hover glow ──────────────────────────────────── */
+.card-hover {
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.card-hover:hover {
+  border-color: #2a4a5a !important;
+  box-shadow: 0 0 24px #00e5ff0a;
+  transform: translateY(-1px);
+}
+
+/* ── Pulse dot ────────────────────────────────────────── */
+@keyframes ping {
+  75%, 100% { transform: scale(2); opacity: 0; }
+}
+.ping { animation: ping 1.2s cubic-bezier(0,0,0.2,1) infinite; }
+
+/* ── Glitch text (para 404) ───────────────────────────── */
+@keyframes glitch1 {
+  0%,100% { clip-path: inset(0 0 98% 0); transform: translate(-3px, 0); }
+  20%     { clip-path: inset(30% 0 50% 0); transform: translate(3px, 0); }
+  40%     { clip-path: inset(60% 0 20% 0); transform: translate(-2px, 0); }
+  60%     { clip-path: inset(80% 0 5% 0);  transform: translate(2px, 0); }
+  80%     { clip-path: inset(10% 0 75% 0); transform: translate(-1px, 0); }
+}
+@keyframes glitch2 {
+  0%,100% { clip-path: inset(98% 0 0 0); transform: translate(3px, 0); }
+  20%     { clip-path: inset(50% 0 30% 0); transform: translate(-3px, 0); }
+  40%     { clip-path: inset(20% 0 60% 0); transform: translate(2px, 0); }
+  60%     { clip-path: inset(5% 0 80% 0);  transform: translate(-2px, 0); }
+  80%     { clip-path: inset(75% 0 10% 0); transform: translate(1px, 0); }
+}
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+.glitch::before {
+  color: #ff4d6d;
+  animation: glitch1 2.5s infinite linear;
+}
+.glitch::after {
+  color: #00e5ff;
+  animation: glitch2 2.5s infinite linear;
+}
+
+/* ── Scan line (para 404) ─────────────────────────────── */
+@keyframes scanline {
+  0%   { top: -10%; }
+  100% { top: 110%; }
+}
+.scanline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #00e5ff44, transparent);
+  animation: scanline 3s linear infinite;
+  pointer-events: none;
+}
