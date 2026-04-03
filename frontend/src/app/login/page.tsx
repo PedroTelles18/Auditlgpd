@@ -5,353 +5,208 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ShieldCheck, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { ShieldCheck, Eye, EyeOff, Loader2 } from "lucide-react";
 import { login } from "@/lib/auth";
-import { useAuth } from "@/context/AuthContext";
 import type { LoginFormData } from "@/types/auth";
+import { useAuth } from "@/context/AuthContext";
 
 const loginSchema = z.object({
-  email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  email:    z.string().email("E-mail inválido"),
+  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
+
+const FEATURES = [
+  { dot: "#60a5fa", text: "Análise de código", sub: "Python e JavaScript" },
+  { dot: "#34d399", text: "Auditoria de banco",sub: "10 regras LGPD no schema" },
+  { dot: "#fbbf24", text: "Relatórios PDF",    sub: "Score de conformidade" },
+  { dot: "#a78bfa", text: "IA integrada",      sub: "Llama 3.3 70B via Groq" },
+];
 
 export default function LoginPage() {
   const router = useRouter();
   const { refresh } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [showPw, setShowPw]   = useState(false);
+  const [serverErr, setErr]   = useState<string | null>(null);
+  const [demoLoad, setDemoLoad] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
 
   async function onSubmit(data: LoginFormData) {
-    setServerError(null);
+    setErr(null);
     try {
       await login(data);
       await refresh();
       router.push("/dashboard");
-    } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail || "Credenciais inválidas. Tente novamente.";
-      setServerError(msg);
+    } catch {
+      setErr("Credenciais inválidas. Verifique seu e-mail e senha.");
     }
   }
 
   async function loginDemo() {
-    setServerError(null);
+    setErr(null);
+    setDemoLoad(true);
     try {
       await login({ email: "demo@privyon.com.br", password: "demo1234" });
       await refresh();
-      // Always show tour for demo
       localStorage.removeItem("privyon_onboarded");
       router.push("/dashboard");
     } catch {
-      setServerError("Conta demo temporariamente indisponível.");
-    }
+      setErr("Conta demo temporariamente indisponível.");
+    } finally { setDemoLoad(false); }
   }
 
   return (
-    <div className="min-h-screen bg-bg overflow-hidden relative flex items-center justify-center">
-      
-      {/* Grid background */}
-      <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
-        style={{
-          backgroundImage:
-            "linear-gradient(#1e2d3d 1px, transparent 1px), linear-gradient(90deg, #1e2d3d 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
-      />
+    <div className="min-h-screen flex">
 
-      {/* Radial glow */}
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "700px",
-          height: "700px",
-          background: "radial-gradient(circle, #00e5ff0d 0%, transparent 70%)",
-        }}
-      />
+      {/* Left panel */}
+      <div className="hidden lg:flex flex-col justify-between p-10 relative overflow-hidden flex-shrink-0"
+        style={{ width: 400, background: "#0f1629" }}>
+        {/* Grid bg */}
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)", backgroundSize: "32px 32px" }} />
+        {/* Glow */}
+        <div className="absolute top-0 left-0 w-[400px] h-[400px] opacity-15 pointer-events-none"
+          style={{ background: "radial-gradient(circle at 30% 30%, #3b82f6, transparent 70%)" }} />
+        <div className="absolute bottom-0 right-0 w-[300px] h-[300px] opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle at 70% 70%, #3b82f6, transparent 70%)" }} />
 
-      {/* Top bar */}
-      <div
-        className="fixed top-0 left-0 right-0 flex items-center justify-between px-6 border-b border-border font-mono text-xs text-text-dim z-50"
-        style={{
-          height: "44px",
-          background: "#080c10cc",
-          backdropFilter: "blur(10px)",
-        }}
-      >
-        <div className="flex items-center gap-4">
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-success"
-            style={{ boxShadow: "0 0 6px #3ddc84" }}
-          />
-          <span>Sistema ativo — v2.0.0</span>
-          <span className="text-border">|</span>
-          <span>Processamento 100% local</span>
-        </div>
-        <div className="flex gap-5">
-          <span>LGPD Art. 46</span>
-          <span>ISO 27001</span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="relative flex items-center gap-20 px-8">
-        
-        {/* Branding */}
-        <div className="max-w-xs hidden lg:block">
-          <div
-            className="inline-flex items-center gap-1.5 mb-6 px-2.5 py-1 rounded font-mono text-xs tracking-widest uppercase"
-            style={{
-              background: "#00e5ff22",
-              border: "1px solid #00e5ff33",
-              color: "#00e5ff99",
-            }}
-          >
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-accent"
-              style={{ boxShadow: "0 0 8px #00e5ff" }}
-            />
-            Privyon
+        {/* Logo */}
+        <div className="flex items-center gap-3 z-10">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: "#3b82f6", boxShadow: "0 4px 12px rgba(59,130,246,0.5)" }}>
+            <ShieldCheck size={20} color="white" />
           </div>
+          <span className="text-[22px] font-extrabold text-white tracking-tight">
+            Priv<span style={{ color: "#3b82f6" }}>yon</span>
+          </span>
+        </div>
 
-          <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-white mb-3">
-            Priv
-            <span
-              className="text-accent"
-              style={{ textShadow: "0 0 30px #00e5ff" }}
-            >
-              yon
-            </span>
-          </h1>
-
-          <p className="text-sm text-text-dim font-mono leading-relaxed mb-9">
-            Sistema automatizado de auditoria
-            <br />
-            de conformidade para infraestrutura de TI.
+        {/* Mid */}
+        <div className="z-10">
+          <h2 className="text-[26px] font-extrabold text-white leading-tight mb-3"
+            style={{ letterSpacing: "-0.02em" }}>
+            Auditoria LGPD inteligente e automatizada
+          </h2>
+          <p className="text-[13px] leading-relaxed mb-8" style={{ color: "rgba(255,255,255,0.5)" }}>
+            Identifique vulnerabilidades de privacidade em código e banco de dados. Gere relatórios completos com score de conformidade.
           </p>
-
-          <div className="flex gap-6">
-            {[
-              { value: "100%", label: "On-premise" },
-              { value: "0ms", label: "Latência ext." },
-              { value: "2", label: "Módulos" },
-            ].map(({ value, label }) => (
-              <div key={label} className="flex flex-col gap-1">
-                <span className="text-xl font-bold text-white font-mono">
-                  {value}
-                </span>
-                <span className="text-xs text-text-dim font-mono uppercase tracking-wider">
-                  {label}
-                </span>
+          <div className="flex flex-col gap-3">
+            {FEATURES.map(({ dot, text, sub }) => (
+              <div key={text} className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dot }} />
+                <div>
+                  <span className="text-[12px] font-bold text-white">{text} </span>
+                  <span className="text-[12px]" style={{ color: "rgba(255,255,255,0.5)" }}>— {sub}</span>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Divider */}
-        <div
-          className="hidden lg:block w-px h-72"
-          style={{
-            background:
-              "linear-gradient(to bottom, transparent, #1e2d3d, transparent)",
-          }}
-        />
+        {/* Bottom */}
+        <div className="z-10 flex items-center gap-3 p-3 rounded-xl"
+          style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
+          <ShieldCheck size={14} color="#86efac" />
+          <div>
+            <p className="text-[12px] font-bold" style={{ color: "#86efac" }}>Segurança OWASP certificada</p>
+            <p className="text-[11px]" style={{ color: "rgba(255,255,255,0.4)" }}>JWT · Argon2id · Rate Limiting · Security Headers</p>
+          </div>
+        </div>
+      </div>
 
-        {/* Card */}
-        <div
-          className="w-96 rounded-xl p-9 relative"
-          style={{
-            background: "#0d1117",
-            border: "1px solid #1e2d3d",
-            boxShadow: "0 0 0 1px #ffffff05, 0 24px 64px #00000066",
-          }}
-        >
-          {/* Top glow line */}
-          <div
-            className="absolute top-0 rounded-t-xl pointer-events-none"
-            style={{
-              left: "20%",
-              right: "20%",
-              height: "1px",
-              background:
-                "linear-gradient(to right, transparent, #00e5ff, transparent)",
-              opacity: 0.6,
-            }}
-          />
-
+      {/* Right form */}
+      <div className="flex-1 flex items-center justify-center p-8" style={{ background: "#f8fafc" }}>
+        <div className="w-full max-w-[360px]">
           <div className="mb-7">
-            <h2 className="text-lg font-bold text-white mb-1">
-              Acesso ao sistema
-            </h2>
-            <p className="text-xs text-text-dim font-mono">
-              // credenciais corporativas
-            </p>
+            <h1 className="text-[24px] font-extrabold mb-1" style={{ color: "#0f172a", letterSpacing: "-0.02em" }}>
+              Bem-vindo de volta 👋
+            </h1>
+            <p className="text-[13px]" style={{ color: "#94a3b8" }}>Acesse sua conta para continuar</p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* E-mail */}
-            <div>
-              <label className="block text-xs font-mono text-text-dim uppercase tracking-widest mb-2">
-                E-mail
-              </label>
-              <div className="relative">
-                <Mail
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim pointer-events-none"
-                />
-                <input
-                  {...register("email")}
-                  type="email"
-                  placeholder="voce@empresa.com.br"
-                  className="w-full pl-9 pr-3 py-3 rounded-md font-mono text-sm text-[#cdd9e5] placeholder-[#3a4a58] outline-none transition-all"
-                  style={{
-                    background: "#0a0f14",
-                    border: `1px solid ${errors.email ? "#ff4d6d" : "#1e2d3d"}`,
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#00e5ff99";
-                    e.target.style.boxShadow = "0 0 0 3px #00e5ff22";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = errors.email
-                      ? "#ff4d6d"
-                      : "#1e2d3d";
-                    e.target.style.boxShadow = "none";
-                  }}
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1.5 text-xs font-mono text-danger">
-                  {errors.email.message}
-                </p>
-              )}
+          <form onSubmit={handleSubmit(onSubmit)}>
+            {/* Email */}
+            <div className="mb-3.5">
+              <label className="block text-[11px] font-bold uppercase tracking-[0.05em] mb-1.5"
+                style={{ color: "#475569" }}>E-mail</label>
+              <input {...register("email")} type="email" placeholder="seu@email.com"
+                className="w-full px-3.5 py-2.5 rounded-lg text-[13px] outline-none transition-all"
+                style={{ border: "1.5px solid #e2e8f4", background: "#fff", color: "#0f172a",
+                  fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "#2563eb"; (e.target as HTMLInputElement).style.boxShadow = "0 0 0 3px rgba(37,99,235,0.1)"; }}
+                onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = "#e2e8f4"; (e.target as HTMLInputElement).style.boxShadow = "none"; }}
+              />
+              {errors.email && <p className="text-[11px] mt-1" style={{ color: "#ef4444" }}>{errors.email.message}</p>}
             </div>
 
-            {/* Senha */}
-            <div>
-              <label className="block text-xs font-mono text-text-dim uppercase tracking-widest mb-2">
-                Senha
-              </label>
+            {/* Password */}
+            <div className="mb-3">
+              <label className="block text-[11px] font-bold uppercase tracking-[0.05em] mb-1.5"
+                style={{ color: "#475569" }}>Senha</label>
               <div className="relative">
-                <Lock
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-text-dim pointer-events-none"
+                <input {...register("password")} type={showPw ? "text" : "password"} placeholder="••••••••"
+                  className="w-full px-3.5 py-2.5 pr-10 rounded-lg text-[13px] outline-none transition-all"
+                  style={{ border: "1.5px solid #e2e8f4", background: "#fff", color: "#0f172a",
+                    fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "#2563eb"; (e.target as HTMLInputElement).style.boxShadow = "0 0 0 3px rgba(37,99,235,0.1)"; }}
+                  onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = "#e2e8f4"; (e.target as HTMLInputElement).style.boxShadow = "none"; }}
                 />
-                <input
-                  {...register("password")}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••••••"
-                  className="w-full pl-9 pr-10 py-3 rounded-md font-mono text-sm text-[#cdd9e5] placeholder-[#3a4a58] outline-none transition-all"
-                  style={{
-                    background: "#0a0f14",
-                    border: `1px solid ${errors.password ? "#ff4d6d" : "#1e2d3d"}`,
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "#00e5ff99";
-                    e.target.style.boxShadow = "0 0 0 3px #00e5ff22";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = errors.password
-                      ? "#ff4d6d"
-                      : "#1e2d3d";
-                    e.target.style.boxShadow = "none";
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-dim hover:text-accent transition-colors"
-                >
-                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                <button type="button" onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: "#94a3b8" }}>
+                  {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="mt-1.5 text-xs font-mono text-danger">
-                  {errors.password.message}
-                </p>
-              )}
-              <a
-                href="#"
-                className="block text-right text-xs font-mono mt-1.5 text-accent-soft hover:text-accent transition-colors"
-              >
-                Esqueceu a senha?
-              </a>
+              {errors.password && <p className="text-[11px] mt-1" style={{ color: "#ef4444" }}>{errors.password.message}</p>}
             </div>
 
-            {/* Server error */}
-            {serverError && (
-              <div className="p-3 rounded-md text-xs font-mono text-danger bg-[#1a0a0d] border border-[#ff4d6d33]">
-                {serverError}
+            <div className="flex justify-end mb-5">
+              <button type="button" className="text-[12px] font-semibold transition-colors"
+                style={{ color: "#2563eb" }}>
+                Esqueci minha senha
+              </button>
+            </div>
+
+            {serverErr && (
+              <div className="mb-4 px-3.5 py-2.5 rounded-lg text-[12px]"
+                style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#dc2626" }}>
+                {serverErr}
               </div>
             )}
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full mt-2 py-3.5 rounded-md text-black font-bold text-sm tracking-wide flex items-center justify-center gap-2 transition-all disabled:opacity-60"
-              style={{
-                background: "#00e5ff",
-                boxShadow: isSubmitting ? "none" : "0 0 0 0 #00e5ff44",
-              }}
-              onMouseEnter={(e) => {
-                (e.target as HTMLButtonElement).style.boxShadow =
-                  "0 0 24px #00e5ff44";
-              }}
-              onMouseLeave={(e) => {
-                (e.target as HTMLButtonElement).style.boxShadow = "none";
-              }}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 size={15} className="animate-spin" />
-                  Autenticando...
-                </>
-              ) : (
-                "ENTRAR NO SISTEMA"
-              )}
+            <button type="submit" disabled={isSubmitting}
+              className="w-full py-3 rounded-lg text-[14px] font-bold text-white mb-2.5 transition-all disabled:opacity-60"
+              style={{ background: "#2563eb", boxShadow: "0 4px 14px rgba(37,99,235,0.35)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              {isSubmitting ? <Loader2 size={16} className="animate-spin mx-auto" /> : "Entrar no Privyon →"}
+            </button>
+
+            <button type="button" onClick={loginDemo} disabled={demoLoad}
+              className="w-full py-2.5 rounded-lg text-[13px] font-semibold mb-5 transition-colors disabled:opacity-60"
+              style={{ background: "#fff", color: "#475569", border: "1.5px solid #e2e8f4", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              {demoLoad ? <Loader2 size={14} className="animate-spin mx-auto" /> : "▶  Acessar conta demonstração"}
             </button>
           </form>
 
-          {/* Security note */}
-          <div
-            className="flex items-center justify-center gap-2 mt-5 p-2.5 rounded-md text-xs font-mono"
-            style={{
-              background: "#0a1f12",
-              border: "1px solid #1e3a2a",
-              color: "#3ddc84aa",
-            }}
-          >
-            <ShieldCheck size={12} />
-            Conexão cifrada — dados nunca saem do seu ambiente
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px" style={{ background: "#e2e8f4" }} />
+            <span className="text-[11px]" style={{ color: "#94a3b8" }}>não tem conta?</span>
+            <div className="flex-1 h-px" style={{ background: "#e2e8f4" }} />
           </div>
-          {/* Register link */}
-          <p className="mt-4 text-center text-xs font-mono text-text-dim">
-            {/* Demo button */}
-            <button
-              type="button"
-              onClick={loginDemo}
-              className="w-full py-2 rounded-lg text-xs font-mono font-bold border border-border text-text-dim hover:text-white hover:border-[#2a3d52] transition-all mb-2"
-              style={{ background: "#060a0e" }}>
-              ▶ Entrar com conta demo
-            </button>
-            Não tem conta?{" "}
-            <a href="/register" className="text-accent-soft hover:text-accent transition-colors">
-              Criar conta
+
+          <div className="text-center mb-5">
+            <a href="/register" className="text-[13px] font-bold transition-colors" style={{ color: "#2563eb" }}>
+              Criar conta gratuita →
             </a>
-          </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-[12px] font-medium"
+            style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", color: "#15803d" }}>
+            <ShieldCheck size={13} />
+            Conexão segura · Dados protegidos com AES-256 e JWT
+          </div>
         </div>
       </div>
     </div>
