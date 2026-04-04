@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, ChevronDown, ChevronUp, Download, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Download, Loader2 } from "lucide-react";
 import { Topbar, Card, Badge, BtnPrimary, BtnOutline } from "@/components/ui";
 import { useLang } from "@/context/LanguageContext";
 import Cookies from "js-cookie";

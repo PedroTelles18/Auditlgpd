@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Activity, RefreshCw, ChevronDown, ChevronUp, Wifi, Cpu, HardDrive, Clock, AlertTriangle, CheckCircle, XCircle, Database, Zap, Lock, BarChart2, Server } from "lucide-react";
-import { Topbar, Card, Badge, BtnPrimary, BtnOutline } from "@/components/ui";
+import { Activity, RefreshCw, ChevronDown, ChevronUp, Wifi, Cpu, HardDrive, Clock, AlertTriangle, CheckCircle, XCircle, Database, Zap, Lock, BarChart2, Server, FileText } from "lucide-react";
+import { Topbar, Card, Badge, BtnOutline } from "@/components/ui";
 import { useLang } from "@/context/LanguageContext";
 
 function rand(min: number, max: number) { return Math.random() * (max - min) + min; }
