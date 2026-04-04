@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Save, CheckCircle2, Eye, EyeOff, Bell, Key, Zap, Moon, Shield, Trash2, FileText, Globe } from "lucide-react";
 import { Topbar, Card, BtnPrimary } from "@/components/ui";
 import { useLang, Lang } from "@/context/LanguageContext";
+import { useTheme } from "@/context/ThemeContext";
 
 const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "pt-BR", label: "Português (Brasil)", flag: "🇧🇷" },
@@ -27,6 +28,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 
 export default function SettingsPage() {
   const { t, lang, setLang } = useLang();
+  const { dark, toggle: toggleDark } = useTheme();
   const [saved, setSaved]     = useState(false);
   const [cleared, setCleared] = useState(false);
   const [showKey, setShowKey] = useState(false);
@@ -199,6 +201,9 @@ export default function SettingsPage() {
 
           {/* ── APARÊNCIA ── */}
           <Section icon={Moon} iconColor="#64748b" title={t.appearance}>
+            <Row label="Modo escuro" desc="Ativa o tema escuro em todo o sistema instantaneamente">
+              <Toggle on={dark} onChange={() => toggleDark()} />
+            </Row>
             <Row label={t.compact_mode} desc="Reduzir espaçamento para mais conteúdo visível">
               <Toggle on={prefs.compactMode} onChange={v => set("compactMode", v)} />
             </Row>

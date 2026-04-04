@@ -6,14 +6,17 @@ import Link from "next/link";
 import { ShieldCheck, LogOut, LayoutDashboard, FileCode2, Database, FileText, Bell, Settings, User, ChevronRight, Activity } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { LanguageProvider, useLang } from "@/context/LanguageContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import OnboardingTour from "@/components/OnboardingTour";
 import { DashboardSkeleton } from "@/components/Skeleton";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <LanguageProvider>
-      <AppInner>{children}</AppInner>
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AppInner>{children}</AppInner>
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }
 
