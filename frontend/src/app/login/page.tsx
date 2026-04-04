@@ -118,26 +118,26 @@ export default function LoginPage() {
       </div>
 
       {/* Right form */}
-      <div className="flex-1 flex items-center justify-center p-8" style={{ background: "#f8fafc" }}>
+      <div className="flex-1 flex items-center justify-center p-8" style={{ background: "var(--bg2)" }}>
         <div className="w-full max-w-[360px]">
           <div className="mb-7">
-            <h1 className="text-[24px] font-extrabold mb-1" style={{ color: "#0f172a", letterSpacing: "-0.02em" }}>
+            <h1 className="text-[24px] font-extrabold mb-1" style={{ color: "var(--text)", letterSpacing: "-0.02em" }}>
               Bem-vindo de volta 👋
             </h1>
-            <p className="text-[13px]" style={{ color: "#94a3b8" }}>Acesse sua conta para continuar</p>
+            <p className="text-[13px]" style={{ color: "var(--text-3)" }}>Acesse sua conta para continuar</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* Email */}
             <div className="mb-3.5">
               <label className="block text-[11px] font-bold uppercase tracking-[0.05em] mb-1.5"
-                style={{ color: "#475569" }}>E-mail</label>
+                style={{ color: "var(--text-2)" }}>E-mail</label>
               <input {...register("email")} type="email" placeholder="seu@email.com"
                 className="w-full px-3.5 py-2.5 rounded-lg text-[13px] outline-none transition-all"
-                style={{ border: "1.5px solid #e2e8f4", background: "#fff", color: "#0f172a",
+                style={{ border: "1.5px solid #e2e8f4", background: "#fff", color: "var(--text)",
                   fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "#2563eb"; (e.target as HTMLInputElement).style.boxShadow = "0 0 0 3px rgba(37,99,235,0.1)"; }}
-                onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = "#e2e8f4"; (e.target as HTMLInputElement).style.boxShadow = "none"; }}
+                onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = "var(--border)"; (e.target as HTMLInputElement).style.boxShadow = "none"; }}
               />
               {errors.email && <p className="text-[11px] mt-1" style={{ color: "#ef4444" }}>{errors.email.message}</p>}
             </div>
@@ -145,18 +145,18 @@ export default function LoginPage() {
             {/* Password */}
             <div className="mb-3">
               <label className="block text-[11px] font-bold uppercase tracking-[0.05em] mb-1.5"
-                style={{ color: "#475569" }}>Senha</label>
+                style={{ color: "var(--text-2)" }}>Senha</label>
               <div className="relative">
                 <input {...register("password")} type={showPw ? "text" : "password"} placeholder="••••••••"
                   className="w-full px-3.5 py-2.5 pr-10 rounded-lg text-[13px] outline-none transition-all"
-                  style={{ border: "1.5px solid #e2e8f4", background: "#fff", color: "#0f172a",
+                  style={{ border: "1.5px solid #e2e8f4", background: "#fff", color: "var(--text)",
                     fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                   onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "#2563eb"; (e.target as HTMLInputElement).style.boxShadow = "0 0 0 3px rgba(37,99,235,0.1)"; }}
-                  onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = "#e2e8f4"; (e.target as HTMLInputElement).style.boxShadow = "none"; }}
+                  onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = "var(--border)"; (e.target as HTMLInputElement).style.boxShadow = "none"; }}
                 />
                 <button type="button" onClick={() => setShowPw(!showPw)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                  style={{ color: "#94a3b8" }}>
+                  style={{ color: "var(--text-3)" }}>
                   {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
@@ -185,15 +185,15 @@ export default function LoginPage() {
 
             <button type="button" onClick={loginDemo} disabled={demoLoad}
               className="w-full py-2.5 rounded-lg text-[13px] font-semibold mb-5 transition-colors disabled:opacity-60"
-              style={{ background: "#fff", color: "#475569", border: "1.5px solid #e2e8f4", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              style={{ background: "#fff", color: "var(--text-2)", border: "1.5px solid #e2e8f4", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {demoLoad ? <Loader2 size={14} className="animate-spin mx-auto" /> : "▶  Acessar conta demonstração"}
             </button>
           </form>
 
           <div className="flex items-center gap-3 mb-5">
-            <div className="flex-1 h-px" style={{ background: "#e2e8f4" }} />
-            <span className="text-[11px]" style={{ color: "#94a3b8" }}>não tem conta?</span>
-            <div className="flex-1 h-px" style={{ background: "#e2e8f4" }} />
+            <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+            <span className="text-[11px]" style={{ color: "var(--text-3)" }}>não tem conta?</span>
+            <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
           </div>
 
           <div className="text-center mb-5">

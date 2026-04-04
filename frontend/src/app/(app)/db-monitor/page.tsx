@@ -78,12 +78,12 @@ function Gauge({ value, max = 100, color, size = 72 }: { value: number; max?: nu
   const dashOffset = dashLen * (1 - pct);
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#f1f5f9" strokeWidth="8"
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--bg3)" strokeWidth="8"
         strokeDasharray={`${dashLen} ${circ}`} strokeDashoffset={-circ * 0.125} strokeLinecap="round" />
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="8"
         strokeDasharray={`${dashLen} ${circ}`} strokeDashoffset={-circ * 0.125 + dashOffset} strokeLinecap="round"
         style={{ transition: "stroke-dashoffset 0.5s ease" }} />
-      <text x={size/2} y={size/2 + 5} textAnchor="middle" fontSize="13" fontWeight="800" fill="#0f172a">
+      <text x={size/2} y={size/2 + 5} textAnchor="middle" fontSize="13" fontWeight="800" fill="var(--text)">
         {Math.round(value)}%
       </text>
     </svg>
@@ -104,10 +104,10 @@ function ExpandableCard({ title, icon: Icon, iconColor, children, expanded, onTo
           style={{ background: `${iconColor}18` }}>
           <Icon size={15} style={{ color: iconColor }} />
         </div>
-        <span className="text-[13px] font-bold flex-1" style={{ color: "#0f172a" }}>{title}</span>
+        <span className="text-[13px] font-bold flex-1" style={{ color: "var(--text)" }}>{title}</span>
         {extra}
         <button className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-lg transition-colors"
-          style={{ background: "#f1f5f9", color: "#64748b" }}>
+          style={{ background: "var(--bg3)", color: "var(--text-2)" }}>
           {expanded ? <><ChevronUp size={12} />{t.collapse}</> : <><ChevronDown size={12} />{t.expand}</>}
         </button>
       </div>
@@ -151,15 +151,15 @@ export default function DBMonitorPage() {
 
   const StatusBadge = ({ online }: { online: boolean }) => (
     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-extrabold"
-      style={{ background: online ? "#f0fdf4" : "#fef2f2", color: online ? "#15803d" : "#dc2626" }}>
-      <span className="w-2 h-2 rounded-full" style={{ background: online ? "#22c55e" : "#ef4444",
+      style={{ background: online ? "var(--success-l)" : "var(--danger-l)", color: online ? "#15803d" : "var(--danger)" }}>
+      <span className="w-2 h-2 rounded-full" style={{ background: online ? "var(--success)" : "var(--danger)",
         animation: online ? "ping 1.2s cubic-bezier(0,0,0.2,1) infinite" : "none" }} />
       {online ? t.status_up : t.status_down}
     </div>
   );
 
   const connPct = Math.round((db.activeConn / db.maxConn) * 100);
-  const connColor = connPct > 80 ? "#ef4444" : connPct > 60 ? "#f59e0b" : "#22c55e";
+  const connColor = connPct > 80 ? "var(--danger)" : connPct > 60 ? "var(--warning)" : "var(--success)";
 
   return (
     <div className="flex-1 flex flex-col min-w-0">
@@ -168,49 +168,49 @@ export default function DBMonitorPage() {
           <RefreshCw size={13} /> Atualizar
         </BtnOutline>
         <div className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-lg"
-          style={{ background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0" }}>
+          style={{ background: "var(--success-l)", color: "#15803d", border: "1px solid #bbf7d0" }}>
           <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
           Live · {tick > 0 ? "atualizado agora" : "conectando..."}
         </div>
       </Topbar>
 
-      <main className="flex-1 overflow-y-auto p-6 page-enter" style={{ background: "#f8fafc" }}>
+      <main className="flex-1 overflow-y-auto p-6 page-enter" style={{ background: "var(--bg2)" }}>
         <div className="mb-5">
-          <h1 className="text-[20px] font-extrabold mb-0.5" style={{ color: "#0f172a", letterSpacing: "-0.02em" }}>
+          <h1 className="text-[20px] font-extrabold mb-0.5" style={{ color: "var(--text)", letterSpacing: "-0.02em" }}>
             {t.monitor_title}
           </h1>
-          <p className="text-[12px] font-medium" style={{ color: "#94a3b8" }}>{t.monitor_sub}</p>
+          <p className="text-[12px] font-medium" style={{ color: "var(--text-3)" }}>{t.monitor_sub}</p>
         </div>
 
         <div className="flex flex-col gap-3">
 
           {/* ── STATUS GERAL ── */}
-          <ExpandableCard title="Status Geral do Banco" icon={Server} iconColor="#2563eb"
+          <ExpandableCard title="Status Geral do Banco" icon={Server} iconColor="var(--accent)"
             expanded={expanded.status} onToggle={() => toggle("status")}
             extra={<StatusBadge online={db.online} />}>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: t.status_up, val: db.online ? "Ativo" : "Inativo", icon: db.online ? CheckCircle : XCircle, color: db.online ? "#22c55e" : "#ef4444" },
-                { label: t.uptime, val: db.uptime, icon: Clock, color: "#2563eb" },
+                { label: t.status_up, val: db.online ? "Ativo" : "Inativo", icon: db.online ? CheckCircle : XCircle, color: db.online ? "var(--success)" : "var(--danger)" },
+                { label: t.uptime, val: db.uptime, icon: Clock, color: "var(--accent)" },
                 { label: t.active_conn, val: `${db.activeConn} / ${db.maxConn}`, icon: Wifi, color: connColor },
                 { label: "Taxa de conexão", val: `${connPct}%`, icon: BarChart2, color: connColor },
               ].map(({ label, val, icon: Icon, color }) => (
-                <div key={label} className="rounded-xl p-4" style={{ background: "#f8fafc", border: "1px solid #e2e8f4" }}>
+                <div key={label} className="rounded-xl p-4" style={{ background: "var(--bg2)", border: "1px solid #e2e8f4" }}>
                   <div className="flex items-center gap-2 mb-2">
                     <Icon size={14} style={{ color }} />
-                    <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "#94a3b8" }}>{label}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--text-3)" }}>{label}</span>
                   </div>
-                  <div className="text-[18px] font-extrabold" style={{ color: "#0f172a" }}>{val}</div>
+                  <div className="text-[18px] font-extrabold" style={{ color: "var(--text)" }}>{val}</div>
                 </div>
               ))}
             </div>
             {/* Connection bar */}
             <div className="mt-4">
-              <div className="flex justify-between text-[11px] font-semibold mb-1.5" style={{ color: "#475569" }}>
+              <div className="flex justify-between text-[11px] font-semibold mb-1.5" style={{ color: "var(--text-2)" }}>
                 <span>Uso de conexões ({db.activeConn}/{db.maxConn})</span>
                 <span style={{ color: connColor }}>{connPct}%</span>
               </div>
-              <div className="h-3 rounded-full overflow-hidden" style={{ background: "#f1f5f9" }}>
+              <div className="h-3 rounded-full overflow-hidden" style={{ background: "var(--bg3)" }}>
                 <div className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${connPct}%`, background: connColor }} />
               </div>
@@ -218,18 +218,18 @@ export default function DBMonitorPage() {
           </ExpandableCard>
 
           {/* ── PERFORMANCE ── */}
-          <ExpandableCard title="Performance & Queries" icon={Zap} iconColor="#f59e0b"
+          <ExpandableCard title="Performance & Queries" icon={Zap} iconColor="var(--warning)"
             expanded={expanded.performance} onToggle={() => toggle("performance")}>
             <div className="grid grid-cols-3 gap-4 mb-4">
               {[
-                { label: t.avg_latency, val: `${db.latency.value.toFixed(1)} ms`, history: db.latency.history, color: db.latency.value > 6 ? "#ef4444" : "#22c55e", max: 10 },
-                { label: t.qps,         val: `${Math.round(db.qps.value)}`,         history: db.qps.history, color: "#2563eb", max: 300 },
-                { label: t.slow_queries,val: `${db.slowQueries}`,                   history: db.qps.history.map(() => db.slowQueries), color: db.slowQueries > 2 ? "#ef4444" : "#f59e0b", max: 10 },
+                { label: t.avg_latency, val: `${db.latency.value.toFixed(1)} ms`, history: db.latency.history, color: db.latency.value > 6 ? "var(--danger)" : "var(--success)", max: 10 },
+                { label: t.qps,         val: `${Math.round(db.qps.value)}`,         history: db.qps.history, color: "var(--accent)", max: 300 },
+                { label: t.slow_queries,val: `${db.slowQueries}`,                   history: db.qps.history.map(() => db.slowQueries), color: db.slowQueries > 2 ? "var(--danger)" : "var(--warning)", max: 10 },
               ].map(({ label, val, history, color }) => (
-                <div key={label} className="rounded-xl p-4" style={{ background: "#f8fafc", border: "1px solid #e2e8f4" }}>
+                <div key={label} className="rounded-xl p-4" style={{ background: "var(--bg2)", border: "1px solid #e2e8f4" }}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "#94a3b8" }}>{label}</span>
-                    <span className="text-[14px] font-extrabold" style={{ color: "#0f172a" }}>{val}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: "var(--text-3)" }}>{label}</span>
+                    <span className="text-[14px] font-extrabold" style={{ color: "var(--text)" }}>{val}</span>
                   </div>
                   <Sparkline history={history} color={color} />
                 </div>
@@ -237,8 +237,8 @@ export default function DBMonitorPage() {
             </div>
             {/* Top queries */}
             <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e2e8f4" }}>
-              <div className="px-4 py-2.5" style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f4" }}>
-                <span className="text-[11px] font-bold" style={{ color: "#0f172a" }}>Queries mais pesadas</span>
+              <div className="px-4 py-2.5" style={{ background: "var(--bg2)", borderBottom: "1px solid #e2e8f4" }}>
+                <span className="text-[11px] font-bold" style={{ color: "var(--text)" }}>Queries mais pesadas</span>
               </div>
               {[
                 { query: "SELECT * FROM audit_history WHERE user_id = $1 ORDER BY created_at DESC", time: "1.82s", calls: 234 },
@@ -246,9 +246,9 @@ export default function DBMonitorPage() {
                 { query: "UPDATE users SET updated_at = NOW() WHERE id = $1", time: "0.31s", calls: 1204 },
               ].map(({ query, time, calls }) => (
                 <div key={query} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <code className="text-[10px] flex-1 truncate" style={{ color: "#2563eb" }}>{query}</code>
-                  <span className="text-[11px] font-extrabold flex-shrink-0" style={{ color: "#f59e0b" }}>{time}</span>
-                  <span className="text-[10px] flex-shrink-0" style={{ color: "#94a3b8" }}>{calls}x</span>
+                  <code className="text-[10px] flex-1 truncate" style={{ color: "var(--accent)" }}>{query}</code>
+                  <span className="text-[11px] font-extrabold flex-shrink-0" style={{ color: "var(--warning)" }}>{time}</span>
+                  <span className="text-[10px] flex-shrink-0" style={{ color: "var(--text-3)" }}>{calls}x</span>
                 </div>
               ))}
             </div>
@@ -259,17 +259,17 @@ export default function DBMonitorPage() {
             expanded={expanded.resources} onToggle={() => toggle("resources")}>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: t.cpu_usage,    metric: db.cpu,    color: db.cpu.value > 80 ? "#ef4444" : db.cpu.value > 60 ? "#f59e0b" : "#22c55e" },
-                { label: t.memory_usage, metric: db.memory, color: db.memory.value > 85 ? "#ef4444" : db.memory.value > 70 ? "#f59e0b" : "#2563eb" },
-                { label: t.disk_usage,   metric: db.disk,   color: db.disk.value > 85 ? "#ef4444" : db.disk.value > 70 ? "#f59e0b" : "#22c55e" },
+                { label: t.cpu_usage,    metric: db.cpu,    color: db.cpu.value > 80 ? "var(--danger)" : db.cpu.value > 60 ? "var(--warning)" : "var(--success)" },
+                { label: t.memory_usage, metric: db.memory, color: db.memory.value > 85 ? "var(--danger)" : db.memory.value > 70 ? "var(--warning)" : "var(--accent)" },
+                { label: t.disk_usage,   metric: db.disk,   color: db.disk.value > 85 ? "var(--danger)" : db.disk.value > 70 ? "var(--warning)" : "var(--success)" },
                 { label: t.io_ops,       metric: db.io,     color: "#7c3aed", isRaw: true },
               ].map(({ label, metric, color, isRaw }) => (
-                <div key={label} className="rounded-xl p-4 flex flex-col items-center" style={{ background: "#f8fafc", border: "1px solid #e2e8f4" }}>
-                  <span className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: "#94a3b8" }}>{label}</span>
+                <div key={label} className="rounded-xl p-4 flex flex-col items-center" style={{ background: "var(--bg2)", border: "1px solid #e2e8f4" }}>
+                  <span className="text-[10px] font-bold uppercase tracking-wide mb-3" style={{ color: "var(--text-3)" }}>{label}</span>
                   {isRaw ? (
                     <>
                       <div className="text-[22px] font-extrabold mb-1" style={{ color }}>{Math.round(metric.value)}</div>
-                      <div className="text-[10px]" style={{ color: "#94a3b8" }}>ops/seg</div>
+                      <div className="text-[10px]" style={{ color: "var(--text-3)" }}>ops/seg</div>
                     </>
                   ) : (
                     <Gauge value={metric.value} color={color} />
@@ -283,7 +283,7 @@ export default function DBMonitorPage() {
           </ExpandableCard>
 
           {/* ── ARMAZENAMENTO ── */}
-          <ExpandableCard title="Armazenamento & Crescimento" icon={HardDrive} iconColor="#16a34a"
+          <ExpandableCard title="Armazenamento & Crescimento" icon={HardDrive} iconColor="var(--success)"
             expanded={expanded.storage} onToggle={() => toggle("storage")}>
             <div className="grid grid-cols-3 gap-3 mb-4">
               {[
@@ -291,25 +291,25 @@ export default function DBMonitorPage() {
                 { label: "Crescimento", val: db.tableGrowth, sub: "Média diária" },
                 { label: "Espaço livre", val: "47.6 GB", sub: "Volume total: 80 GB" },
               ].map(({ label, val, sub }) => (
-                <div key={label} className="rounded-xl p-4 text-center" style={{ background: "#f8fafc", border: "1px solid #e2e8f4" }}>
-                  <div className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: "#94a3b8" }}>{label}</div>
-                  <div className="text-[20px] font-extrabold" style={{ color: "#0f172a" }}>{val}</div>
-                  <div className="text-[10px]" style={{ color: "#94a3b8" }}>{sub}</div>
+                <div key={label} className="rounded-xl p-4 text-center" style={{ background: "var(--bg2)", border: "1px solid #e2e8f4" }}>
+                  <div className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{ color: "var(--text-3)" }}>{label}</div>
+                  <div className="text-[20px] font-extrabold" style={{ color: "var(--text)" }}>{val}</div>
+                  <div className="text-[10px]" style={{ color: "var(--text-3)" }}>{sub}</div>
                 </div>
               ))}
             </div>
             <div className="rounded-xl overflow-hidden" style={{ border: "1px solid #e2e8f4" }}>
-              <div className="px-4 py-2.5" style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f4" }}>
-                <span className="text-[11px] font-bold" style={{ color: "#0f172a" }}>{t.table_size}</span>
+              <div className="px-4 py-2.5" style={{ background: "var(--bg2)", borderBottom: "1px solid #e2e8f4" }}>
+                <span className="text-[11px] font-bold" style={{ color: "var(--text)" }}>{t.table_size}</span>
               </div>
               <table className="privyon-table w-full">
                 <thead><tr><th>{t.table}</th><th>{t.size}</th><th>{t.rows}</th></tr></thead>
                 <tbody>
                   {db.tables.map(({ name, size, rows }) => (
                     <tr key={name}>
-                      <td><code className="text-[11px]" style={{ color: "#2563eb" }}>{name}</code></td>
+                      <td><code className="text-[11px]" style={{ color: "var(--accent)" }}>{name}</code></td>
                       <td className="font-semibold">{size}</td>
-                      <td style={{ color: "#94a3b8" }}>{rows}</td>
+                      <td style={{ color: "var(--text-3)" }}>{rows}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -318,82 +318,82 @@ export default function DBMonitorPage() {
           </ExpandableCard>
 
           {/* ── CONCORRÊNCIA ── */}
-          <ExpandableCard title="Concorrência & Locks" icon={Lock} iconColor="#f59e0b"
+          <ExpandableCard title="Concorrência & Locks" icon={Lock} iconColor="var(--warning)"
             expanded={expanded.concurrency} onToggle={() => toggle("concurrency")}
             extra={db.locks > 0 ? <Badge variant="amber">{db.locks} locks</Badge> : <Badge variant="green">OK</Badge>}>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: t.locks, val: db.locks, icon: "🔒", color: db.locks > 2 ? "#ef4444" : db.locks > 0 ? "#f59e0b" : "#22c55e" },
-                { label: t.deadlocks, val: db.deadlocks, icon: "💀", color: db.deadlocks > 0 ? "#ef4444" : "#22c55e" },
-                { label: t.waiting, val: db.waiting, icon: "⏳", color: db.waiting > 3 ? "#ef4444" : db.waiting > 0 ? "#f59e0b" : "#22c55e" },
+                { label: t.locks, val: db.locks, icon: "🔒", color: db.locks > 2 ? "var(--danger)" : db.locks > 0 ? "var(--warning)" : "var(--success)" },
+                { label: t.deadlocks, val: db.deadlocks, icon: "💀", color: db.deadlocks > 0 ? "var(--danger)" : "var(--success)" },
+                { label: t.waiting, val: db.waiting, icon: "⏳", color: db.waiting > 3 ? "var(--danger)" : db.waiting > 0 ? "var(--warning)" : "var(--success)" },
               ].map(({ label, val, icon, color }) => (
-                <div key={label} className="rounded-xl p-5 text-center" style={{ background: "#f8fafc", border: "1px solid #e2e8f4" }}>
+                <div key={label} className="rounded-xl p-5 text-center" style={{ background: "var(--bg2)", border: "1px solid #e2e8f4" }}>
                   <div className="text-2xl mb-2">{icon}</div>
                   <div className="text-[26px] font-extrabold mb-1" style={{ color }}>{val}</div>
-                  <div className="text-[11px] font-semibold" style={{ color: "#94a3b8" }}>{label}</div>
+                  <div className="text-[11px] font-semibold" style={{ color: "var(--text-3)" }}>{label}</div>
                 </div>
               ))}
             </div>
           </ExpandableCard>
 
           {/* ── REPLICAÇÃO ── */}
-          <ExpandableCard title="Replicação & Alta Disponibilidade" icon={Activity} iconColor="#2563eb"
+          <ExpandableCard title="Replicação & Alta Disponibilidade" icon={Activity} iconColor="var(--accent)"
             expanded={expanded.replication} onToggle={() => toggle("replication")}
             extra={<Badge variant={db.replicaOnline ? "green" : "red"}>{db.replicaOnline ? "Réplica OK" : "Réplica Falhou"}</Badge>}>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: "Primário", val: "ONLINE", color: "#22c55e", icon: "🟢" },
-                { label: t.replica_status, val: db.replicaOnline ? "ONLINE" : "OFFLINE", color: db.replicaOnline ? "#22c55e" : "#ef4444", icon: db.replicaOnline ? "🟢" : "🔴" },
-                { label: t.replica_delay, val: db.replicaDelay, color: "#2563eb", icon: "⏱" },
+                { label: "Primário", val: "ONLINE", color: "var(--success)", icon: "🟢" },
+                { label: t.replica_status, val: db.replicaOnline ? "ONLINE" : "OFFLINE", color: db.replicaOnline ? "var(--success)" : "var(--danger)", icon: db.replicaOnline ? "🟢" : "🔴" },
+                { label: t.replica_delay, val: db.replicaDelay, color: "var(--accent)", icon: "⏱" },
               ].map(({ label, val, color, icon }) => (
-                <div key={label} className="rounded-xl p-5 text-center" style={{ background: "#f8fafc", border: "1px solid #e2e8f4" }}>
+                <div key={label} className="rounded-xl p-5 text-center" style={{ background: "var(--bg2)", border: "1px solid #e2e8f4" }}>
                   <div className="text-2xl mb-2">{icon}</div>
                   <div className="text-[18px] font-extrabold mb-1" style={{ color }}>{val}</div>
-                  <div className="text-[11px] font-semibold" style={{ color: "#94a3b8" }}>{label}</div>
+                  <div className="text-[11px] font-semibold" style={{ color: "var(--text-3)" }}>{label}</div>
                 </div>
               ))}
             </div>
           </ExpandableCard>
 
           {/* ── LOGS ── */}
-          <ExpandableCard title="Logs Recentes" icon={FileText} iconColor="#64748b"
+          <ExpandableCard title="Logs Recentes" icon={FileText} iconColor="var(--text-2)"
             expanded={expanded.logs} onToggle={() => toggle("logs")}>
             <div className="flex flex-col gap-1.5">
               {db.logs.map(({ time, level, msg }) => (
                 <div key={time + msg} className="flex items-start gap-3 px-4 py-2.5 rounded-lg"
-                  style={{ background: level === "error" ? "#fef2f2" : level === "warn" ? "#fffbeb" : "#f8fafc",
-                    border: `1px solid ${level === "error" ? "#fecaca" : level === "warn" ? "#fde68a" : "#e2e8f4"}` }}>
-                  <code className="text-[10px] flex-shrink-0 mt-0.5 font-mono" style={{ color: "#94a3b8" }}>{time}</code>
+                  style={{ background: level === "error" ? "var(--danger-l)" : level === "warn" ? "var(--warning-l)" : "var(--bg2)",
+                    border: `1px solid ${level === "error" ? "var(--danger-m)" : level === "warn" ? "var(--warning-m)" : "var(--border)"}` }}>
+                  <code className="text-[10px] flex-shrink-0 mt-0.5 font-mono" style={{ color: "var(--text-3)" }}>{time}</code>
                   <span className={`text-[10px] font-extrabold uppercase px-1.5 py-0.5 rounded flex-shrink-0`}
-                    style={{ background: level === "error" ? "#fecaca" : level === "warn" ? "#fde68a" : "#dbeafe",
-                      color: level === "error" ? "#dc2626" : level === "warn" ? "#b45309" : "#1d4ed8" }}>
+                    style={{ background: level === "error" ? "var(--danger-m)" : level === "warn" ? "var(--warning-m)" : "var(--accent-m)",
+                      color: level === "error" ? "var(--danger)" : level === "warn" ? "#b45309" : "var(--accent-h)" }}>
                     {level}
                   </span>
-                  <code className="text-[11px] flex-1" style={{ color: "#475569" }}>{msg}</code>
+                  <code className="text-[11px] flex-1" style={{ color: "var(--text-2)" }}>{msg}</code>
                 </div>
               ))}
             </div>
           </ExpandableCard>
 
           {/* ── ALERTAS ── */}
-          <ExpandableCard title="Alertas em Tempo Real" icon={AlertTriangle} iconColor="#ef4444"
+          <ExpandableCard title="Alertas em Tempo Real" icon={AlertTriangle} iconColor="var(--danger)"
             expanded={expanded.dbAlerts} onToggle={() => toggle("dbAlerts")}
             extra={<Badge variant="red">{db.dbAlerts.length} ativos</Badge>}>
             <div className="flex flex-col gap-2">
               {db.dbAlerts.map(({ msg, severity }) => (
                 <div key={msg} className="flex items-center gap-3 p-3 rounded-xl"
-                  style={{ background: severity === "critical" ? "#fef2f2" : severity === "high" ? "#fffbeb" : "#f0fdf4",
-                    border: `1px solid ${severity === "critical" ? "#fecaca" : severity === "high" ? "#fde68a" : "#bbf7d0"}` }}>
-                  <AlertTriangle size={14} style={{ color: severity === "critical" ? "#ef4444" : "#f59e0b", flexShrink: 0 }} />
-                  <span className="flex-1 text-[12px] font-semibold" style={{ color: "#0f172a" }}>{msg}</span>
+                  style={{ background: severity === "critical" ? "var(--danger-l)" : severity === "high" ? "var(--warning-l)" : "var(--success-l)",
+                    border: `1px solid ${severity === "critical" ? "var(--danger-m)" : severity === "high" ? "var(--warning-m)" : "var(--success-m)"}` }}>
+                  <AlertTriangle size={14} style={{ color: severity === "critical" ? "var(--danger)" : "var(--warning)", flexShrink: 0 }} />
+                  <span className="flex-1 text-[12px] font-semibold" style={{ color: "var(--text)" }}>{msg}</span>
                   <Badge variant={severity === "critical" ? "red" : severity === "high" ? "amber" : "green"}>
                     {severity.toUpperCase()}
                   </Badge>
                 </div>
               ))}
               {db.dbAlerts.length === 0 && (
-                <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
-                  <CheckCircle size={14} style={{ color: "#22c55e" }} />
+                <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: "var(--success-l)", border: "1px solid #bbf7d0" }}>
+                  <CheckCircle size={14} style={{ color: "var(--success)" }} />
                   <span className="text-[12px] font-semibold" style={{ color: "#15803d" }}>Nenhum alerta ativo — sistema estável</span>
                 </div>
               )}

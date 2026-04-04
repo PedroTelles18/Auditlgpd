@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, FileCode2, Database, FileText, Bell, Zap, X, ChevronRight, ChevronLeft } from "lucide-react";
 
 const STEPS = [
-  { icon: ShieldCheck, title: "Bem-vindo ao Privyon! 🎉",   desc: "Plataforma de auditoria automatizada de conformidade LGPD. Vamos te mostrar o que você pode fazer.",                                              color: "#2563eb" },
-  { icon: FileCode2,   title: "Análise de Código",          desc: "Envie arquivos Python ou JavaScript. O motor AST + regex detecta violações LGPD como CPF em logs e queries sem sanitização.",                  color: "#2563eb" },
-  { icon: Database,    title: "Auditoria de Banco de Dados",desc: "Conecte ao seu PostgreSQL, MySQL ou SQLite. Analisamos o schema em busca de dados pessoais sem criptografia e ausência de consentimento.",    color: "#22c55e" },
-  { icon: FileText,    title: "Relatórios PDF",             desc: "Após cada auditoria, exporte um relatório PDF profissional com achados, recomendações e score de conformidade LGPD.",                           color: "#f59e0b" },
-  { icon: Bell,        title: "Central de Alertas",         desc: "Visualize todos os alertas de violações detectadas, ordene por severidade e marque como resolvidos.",                                            color: "#ef4444" },
-  { icon: Zap,         title: "Pronto para começar!",       desc: "Você conhece todos os módulos do Privyon. Comece pela análise de código ou conecte seu banco de dados agora mesmo.",                           color: "#2563eb" },
+  { icon: ShieldCheck, title: "Bem-vindo ao Privyon! 🎉",   desc: "Plataforma de auditoria automatizada de conformidade LGPD. Vamos te mostrar o que você pode fazer.",                                              color: "var(--accent)" },
+  { icon: FileCode2,   title: "Análise de Código",          desc: "Envie arquivos Python ou JavaScript. O motor AST + regex detecta violações LGPD como CPF em logs e queries sem sanitização.",                  color: "var(--accent)" },
+  { icon: Database,    title: "Auditoria de Banco de Dados",desc: "Conecte ao seu PostgreSQL, MySQL ou SQLite. Analisamos o schema em busca de dados pessoais sem criptografia e ausência de consentimento.",    color: "var(--success)" },
+  { icon: FileText,    title: "Relatórios PDF",             desc: "Após cada auditoria, exporte um relatório PDF profissional com achados, recomendações e score de conformidade LGPD.",                           color: "var(--warning)" },
+  { icon: Bell,        title: "Central de Alertas",         desc: "Visualize todos os alertas de violações detectadas, ordene por severidade e marque como resolvidos.",                                            color: "var(--danger)" },
+  { icon: Zap,         title: "Pronto para começar!",       desc: "Você conhece todos os módulos do Privyon. Comece pela análise de código ou conecte seu banco de dados agora mesmo.",                           color: "var(--accent)" },
 ];
 
 export default function OnboardingTour({ onFinish }: { onFinish: () => void }) {
@@ -34,7 +34,7 @@ export default function OnboardingTour({ onFinish }: { onFinish: () => void }) {
           boxShadow: "0 24px 64px rgba(15,22,41,0.24)", border: "1px solid #e2e8f4" }}>
 
         {/* Progress bar */}
-        <div className="h-1 w-full" style={{ background: "#f1f5f9" }}>
+        <div className="h-1 w-full" style={{ background: "var(--bg3)" }}>
           <div className="h-full transition-all duration-500 rounded-full"
             style={{ width: `${((step + 1) / STEPS.length) * 100}%`, background: current.color }} />
         </div>
@@ -42,7 +42,7 @@ export default function OnboardingTour({ onFinish }: { onFinish: () => void }) {
         {/* Close */}
         <button onClick={onFinish}
           className="absolute top-4 right-4 w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-          style={{ background: "#f1f5f9", color: "#94a3b8" }}>
+          style={{ background: "var(--bg3)", color: "var(--text-3)" }}>
           <X size={14} />
         </button>
 
@@ -54,14 +54,14 @@ export default function OnboardingTour({ onFinish }: { onFinish: () => void }) {
           </div>
 
           {/* Counter */}
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2" style={{ color: "#94a3b8" }}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2" style={{ color: "var(--text-3)" }}>
             Passo {step + 1} de {STEPS.length}
           </p>
 
-          <h2 className="text-[19px] font-extrabold mb-3 leading-tight" style={{ color: "#0f172a", letterSpacing: "-0.02em" }}>
+          <h2 className="text-[19px] font-extrabold mb-3 leading-tight" style={{ color: "var(--text)", letterSpacing: "-0.02em" }}>
             {current.title}
           </h2>
-          <p className="text-[13px] leading-relaxed mb-7" style={{ color: "#64748b" }}>
+          <p className="text-[13px] leading-relaxed mb-7" style={{ color: "var(--text-2)" }}>
             {current.desc}
           </p>
 
@@ -70,7 +70,7 @@ export default function OnboardingTour({ onFinish }: { onFinish: () => void }) {
             {STEPS.map((_, i) => (
               <button key={i} onClick={() => setStep(i)}
                 className="rounded-full transition-all duration-300"
-                style={{ width: i === step ? 20 : 6, height: 6, background: i === step ? current.color : "#e2e8f4" }} />
+                style={{ width: i === step ? 20 : 6, height: 6, background: i === step ? current.color : "var(--border)" }} />
             ))}
           </div>
 
@@ -79,7 +79,7 @@ export default function OnboardingTour({ onFinish }: { onFinish: () => void }) {
             {step > 0 && (
               <button onClick={() => setStep(step - 1)}
                 className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-[12px] font-bold transition-colors"
-                style={{ border: "1px solid #e2e8f4", background: "#fff", color: "#475569" }}>
+                style={{ border: "1px solid #e2e8f4", background: "var(--card-bg)", color: "var(--text-2)" }}>
                 <ChevronLeft size={13} /> Anterior
               </button>
             )}
@@ -92,7 +92,7 @@ export default function OnboardingTour({ onFinish }: { onFinish: () => void }) {
 
           {step < STEPS.length - 1 && (
             <button onClick={onFinish} className="w-full mt-3 text-[11px] transition-colors"
-              style={{ color: "#94a3b8" }}>
+              style={{ color: "var(--text-3)" }}>
               Pular tour
             </button>
           )}

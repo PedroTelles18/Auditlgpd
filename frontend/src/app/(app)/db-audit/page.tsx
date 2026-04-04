@@ -44,17 +44,17 @@ export default function DBAuditPage() {
       <Topbar breadcrumb={t.dbaudit}>
         {results&&<BtnOutline><Download size={13}/>PDF</BtnOutline>}
       </Topbar>
-      <main className="flex-1 overflow-y-auto p-6 page-enter" style={{background:"#f8fafc"}}>
-        <div className="mb-5"><h1 className="text-[20px] font-extrabold mb-0.5" style={{color:"#0f172a",letterSpacing:"-0.02em"}}>{t.dbaudit}</h1><p className="text-[12px]" style={{color:"#94a3b8"}}>10 regras LGPD aplicadas ao schema do banco</p></div>
+      <main className="flex-1 overflow-y-auto p-6 page-enter" style={{background:"var(--bg2)"}}>
+        <div className="mb-5"><h1 className="text-[20px] font-extrabold mb-0.5" style={{color:"var(--text)",letterSpacing:"-0.02em"}}>{t.dbaudit}</h1><p className="text-[12px]" style={{color:"var(--text-3)"}}>10 regras LGPD aplicadas ao schema do banco</p></div>
         <Card className="p-5 mb-5">
           <div className="grid grid-cols-4 gap-3 items-end">
             {[{label:"Host",val:host,set:setHost},{label:"Banco",val:db2,set:setDb2}].map(({label,val,set})=>(
-              <div key={label}><label className="block text-[11px] font-bold uppercase tracking-[0.05em] mb-1.5" style={{color:"#475569"}}>{label}</label>
-                <input value={val} onChange={e=>set(e.target.value)} className="w-full px-3 py-2 rounded-lg text-[12px] outline-none" style={{border:"1.5px solid #e2e8f4",background:"#f8fafc",color:"#0f172a",fontFamily:"'Plus Jakarta Sans',sans-serif"}}/>
+              <div key={label}><label className="block text-[11px] font-bold uppercase tracking-[0.05em] mb-1.5" style={{color:"var(--text-2)"}}>{label}</label>
+                <input value={val} onChange={e=>set(e.target.value)} className="w-full px-3 py-2 rounded-lg text-[12px] outline-none" style={{border:"1.5px solid #e2e8f4",background:"var(--bg2)",color:"var(--text)",fontFamily:"'Plus Jakarta Sans',sans-serif"}}/>
               </div>
             ))}
-            <div><label className="block text-[11px] font-bold uppercase tracking-[0.05em] mb-1.5" style={{color:"#475569"}}>Tipo</label>
-              <select value={type2} onChange={e=>setType2(e.target.value)} className="w-full px-3 py-2 rounded-lg text-[12px] outline-none" style={{border:"1.5px solid #e2e8f4",background:"#f8fafc",color:"#0f172a",fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
+            <div><label className="block text-[11px] font-bold uppercase tracking-[0.05em] mb-1.5" style={{color:"var(--text-2)"}}>Tipo</label>
+              <select value={type2} onChange={e=>setType2(e.target.value)} className="w-full px-3 py-2 rounded-lg text-[12px] outline-none" style={{border:"1.5px solid #e2e8f4",background:"var(--bg2)",color:"var(--text)",fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
                 <option>PostgreSQL</option><option>MySQL</option><option>SQLite</option>
               </select>
             </div>
@@ -67,8 +67,8 @@ export default function DBAuditPage() {
         {results&&(
           <>
             <div className="grid grid-cols-4 gap-3 mb-5 stagger">
-              {[{l:"Score",v:`${score}%`,c:score>=70?"#15803d":"#dc2626"},{l:"Passou",v:pass,c:"#15803d"},{l:"Atenção",v:warn,c:"#b45309"},{l:"Falhou",v:fail,c:"#dc2626"}].map(({l,v,c})=>(
-                <Card key={l} className="p-4 card-hover"><div className="text-[24px] font-extrabold mb-0.5" style={{color:c,letterSpacing:"-0.03em"}}>{v}</div><div className="text-[11px] font-semibold" style={{color:"#94a3b8"}}>{l}</div></Card>
+              {[{l:"Score",v:`${score}%`,c:score>=70?"#15803d":"var(--danger)"},{l:"Passou",v:pass,c:"#15803d"},{l:"Atenção",v:warn,c:"#b45309"},{l:"Falhou",v:fail,c:"var(--danger)"}].map(({l,v,c})=>(
+                <Card key={l} className="p-4 card-hover"><div className="text-[24px] font-extrabold mb-0.5" style={{color:c,letterSpacing:"-0.03em"}}>{v}</div><div className="text-[11px] font-semibold" style={{color:"var(--text-3)"}}>{l}</div></Card>
               ))}
             </div>
             <div className="flex flex-col gap-2">
@@ -78,12 +78,12 @@ export default function DBAuditPage() {
                   <Card key={id} className="overflow-hidden">
                     <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={()=>toggle(id)} style={{borderBottom:isOpen?"1px solid #e2e8f4":"none"}}>
                       <Badge variant={ST[status].v}>{ST[status].l}</Badge>
-                      <div className="flex-1"><p className="text-[13px] font-bold" style={{color:"#0f172a"}}>{name}</p><p className="text-[10px] font-mono" style={{color:"#94a3b8"}}>{id} · tabela: {table}</p></div>
-                      {isOpen?<ChevronUp size={14} style={{color:"#94a3b8",flexShrink:0}}/>:<ChevronDown size={14} style={{color:"#94a3b8",flexShrink:0}}/>}
+                      <div className="flex-1"><p className="text-[13px] font-bold" style={{color:"var(--text)"}}>{name}</p><p className="text-[10px] font-mono" style={{color:"var(--text-3)"}}>{id} · tabela: {table}</p></div>
+                      {isOpen?<ChevronUp size={14} style={{color:"var(--text-3)",flexShrink:0}}/>:<ChevronDown size={14} style={{color:"var(--text-3)",flexShrink:0}}/>}
                     </div>
                     {isOpen&&<div className="p-4 grid grid-cols-2 gap-4">
-                      <div><p className="text-[10px] font-bold uppercase mb-1" style={{color:"#94a3b8"}}>Coluna afetada</p><code className="text-[12px]" style={{color:"#2563eb"}}>{col}</code></div>
-                      <div><p className="text-[10px] font-bold uppercase mb-1" style={{color:"#94a3b8"}}>Diagnóstico</p><p className="text-[12px]" style={{color:"#475569"}}>{desc}</p></div>
+                      <div><p className="text-[10px] font-bold uppercase mb-1" style={{color:"var(--text-3)"}}>Coluna afetada</p><code className="text-[12px]" style={{color:"var(--accent)"}}>{col}</code></div>
+                      <div><p className="text-[10px] font-bold uppercase mb-1" style={{color:"var(--text-3)"}}>Diagnóstico</p><p className="text-[12px]" style={{color:"var(--text-2)"}}>{desc}</p></div>
                     </div>}
                   </Card>
                 );

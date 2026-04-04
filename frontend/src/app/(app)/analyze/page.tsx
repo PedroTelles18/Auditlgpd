@@ -75,18 +75,18 @@ export default function AnalyzePage() {
         )}
       </Topbar>
 
-      <main className="flex-1 overflow-y-auto p-6 page-enter" style={{ background: "#f8fafc" }}>
+      <main className="flex-1 overflow-y-auto p-6 page-enter" style={{ background: "var(--bg2)" }}>
         <div className="mb-5">
-          <h1 className="text-[20px] font-extrabold mb-0.5" style={{ color: "#0f172a", letterSpacing: "-0.02em" }}>{t.analyze_title}</h1>
-          <p className="text-[12px]" style={{ color: "#94a3b8" }}>{t.analyze_sub}</p>
+          <h1 className="text-[20px] font-extrabold mb-0.5" style={{ color: "var(--text)", letterSpacing: "-0.02em" }}>{t.analyze_title}</h1>
+          <p className="text-[12px]" style={{ color: "var(--text-3)" }}>{t.analyze_sub}</p>
         </div>
 
         {/* Upload zone */}
         <div
           className="rounded-xl p-8 text-center mb-5 cursor-pointer transition-all"
           style={{
-            border: `2px dashed ${dragging ? "#2563eb" : "#bfdbfe"}`,
-            background: dragging ? "#eff6ff" : "linear-gradient(135deg, #fafcff, #f0f6ff)",
+            border: `2px dashed ${dragging ? "var(--accent)" : "var(--accent-m)"}`,
+            background: dragging ? "var(--accent-l)" : "linear-gradient(135deg, #fafcff, #f0f6ff)",
           }}
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
@@ -95,10 +95,10 @@ export default function AnalyzePage() {
           <input ref={inputRef} type="file" multiple accept=".py,.js,.ts" className="hidden"
             onChange={e => addFiles(e.target.files)} />
           <div className="text-4xl mb-3">📂</div>
-          <h3 className="text-[15px] font-bold mb-1.5" style={{ color: "#0f172a" }}>{t.drop_files}</h3>
-          <p className="text-[12px] mb-4" style={{ color: "#94a3b8" }}>Suporte para .py · .js · .ts</p>
+          <h3 className="text-[15px] font-bold mb-1.5" style={{ color: "var(--text)" }}>{t.drop_files}</h3>
+          <p className="text-[12px] mb-4" style={{ color: "var(--text-3)" }}>Suporte para .py · .js · .ts</p>
           <button className="px-5 py-2.5 rounded-lg text-[13px] font-bold text-white"
-            style={{ background: "#2563eb", boxShadow: "0 2px 8px rgba(37,99,235,0.3)" }}
+            style={{ background: "var(--accent)", boxShadow: "0 2px 8px rgba(37,99,235,0.3)" }}
             onClick={e => { e.stopPropagation(); inputRef.current?.click(); }}>
             {t.select_files}
           </button>
@@ -109,10 +109,10 @@ export default function AnalyzePage() {
           <div className="flex flex-wrap gap-2 mb-5">
             {files.map((f, i) => (
               <div key={i} className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-                style={{ background: "#eff6ff", border: "1px solid #bfdbfe" }}>
-                <span className="text-[12px] font-semibold" style={{ color: "#2563eb" }}>{f.name}</span>
+                style={{ background: "var(--accent-l)", border: "1px solid #bfdbfe" }}>
+                <span className="text-[12px] font-semibold" style={{ color: "var(--accent)" }}>{f.name}</span>
                 <button onClick={() => setFiles(prev => prev.filter((_, j) => j !== i))}
-                  className="text-[14px]" style={{ color: "#94a3b8" }}>×</button>
+                  className="text-[14px]" style={{ color: "var(--text-3)" }}>×</button>
               </div>
             ))}
           </div>
@@ -123,18 +123,18 @@ export default function AnalyzePage() {
           <>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <span className="text-[14px] font-bold" style={{ color: "#0f172a" }}>
+                <span className="text-[14px] font-bold" style={{ color: "var(--text)" }}>
                   {results.length} {t.findings}
                 </span>
                 {SEVS.map(s => counts[s] > 0 && (
                   <Badge key={s} variant={SEV[s]}>{counts[s]} {s}</Badge>
                 ))}
               </div>
-              <div className="flex gap-1.5 p-1 rounded-xl" style={{ background: "#f1f5f9" }}>
+              <div className="flex gap-1.5 p-1 rounded-xl" style={{ background: "var(--bg3)" }}>
                 {["all","critical","high","medium"].map(s => (
                   <button key={s} onClick={() => setFilter(s)}
                     className="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all"
-                    style={{ background: filter === s ? "#fff" : "transparent", color: filter === s ? "#0f172a" : "#94a3b8",
+                    style={{ background: filter === s ? "var(--card-bg)" : "transparent", color: filter === s ? "var(--text)" : "var(--text-3)",
                       boxShadow: filter === s ? "0 1px 3px rgba(0,0,0,0.08)" : "none" }}>
                     {s === "all" ? t.all : s}
                   </button>
@@ -153,23 +153,23 @@ export default function AnalyzePage() {
                       style={{ borderBottom: isOpen ? "1px solid #e2e8f4" : "none" }}>
                       <Badge variant={SEV[f.severity] || "slate"}>{f.severity.toUpperCase()}</Badge>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-bold truncate" style={{ color: "#0f172a" }}>{f.description}</p>
-                        <p className="text-[10px] font-mono" style={{ color: "#94a3b8" }}>{f.filename} · linha {f.line}</p>
+                        <p className="text-[13px] font-bold truncate" style={{ color: "var(--text)" }}>{f.description}</p>
+                        <p className="text-[10px] font-mono" style={{ color: "var(--text-3)" }}>{f.filename} · linha {f.line}</p>
                       </div>
-                      <code className="text-[10px] px-2 py-1 rounded" style={{ background: "#f1f5f9", color: "#2563eb" }}>{f.rule_id}</code>
-                      {isOpen ? <ChevronUp size={14} style={{ color: "#94a3b8", flexShrink: 0 }} /> : <ChevronDown size={14} style={{ color: "#94a3b8", flexShrink: 0 }} />}
+                      <code className="text-[10px] px-2 py-1 rounded" style={{ background: "var(--bg3)", color: "var(--accent)" }}>{f.rule_id}</code>
+                      {isOpen ? <ChevronUp size={14} style={{ color: "var(--text-3)", flexShrink: 0 }} /> : <ChevronDown size={14} style={{ color: "var(--text-3)", flexShrink: 0 }} />}
                     </div>
                     {isOpen && (
                       <div className="p-4 grid gap-3">
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: "#94a3b8" }}>Trecho de código</p>
-                          <pre className="text-[11px] p-3 rounded-lg overflow-x-auto" style={{ background: "#0f172a", color: "#e2e8f0", fontFamily: "'JetBrains Mono', monospace" }}>
+                          <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-3)" }}>Trecho de código</p>
+                          <pre className="text-[11px] p-3 rounded-lg overflow-x-auto" style={{ background: "var(--text)", color: "#e2e8f0", fontFamily: "'JetBrains Mono', monospace" }}>
                             <code>{f.code_snippet}</code>
                           </pre>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: "#94a3b8" }}>Recomendação</p>
-                          <div className="p-3 rounded-lg" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                          <p className="text-[10px] font-bold uppercase tracking-wide mb-1.5" style={{ color: "var(--text-3)" }}>Recomendação</p>
+                          <div className="p-3 rounded-lg" style={{ background: "var(--success-l)", border: "1px solid #bbf7d0" }}>
                             <p className="text-[12px]" style={{ color: "#15803d" }}>{f.recommendation}</p>
                           </div>
                         </div>

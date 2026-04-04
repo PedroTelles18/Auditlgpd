@@ -50,7 +50,7 @@ function AppInner({ children }: { children: React.ReactNode }) {
   ];
 
   if (loading || !user) return (
-    <div className="min-h-screen flex" style={{ background: "#f8fafc" }}>
+    <div className="min-h-screen flex" style={{ background: "var(--bg2)" }}>
       <aside className="hidden lg:flex flex-col flex-shrink-0" style={{ width: 225, background: "#0f1629" }}>
         <div className="h-[58px] px-4 flex items-center gap-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <div className="skeleton w-8 h-8 rounded-lg" style={{ background: "#1e2d5a" }} />
@@ -65,7 +65,7 @@ function AppInner({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#f8fafc" }}>
+    <div className="min-h-screen flex" style={{ background: "var(--bg2)" }}>
       {/* Sidebar */}
       <aside className="hidden lg:flex flex-col flex-shrink-0"
         style={{ width: 225, background: "#0f1629", borderRight: "1px solid rgba(255,255,255,0.04)" }}>

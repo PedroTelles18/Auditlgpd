@@ -24,7 +24,7 @@ const SEV_MAP: Record<Alert["sev"], { variant: "red"|"amber"|"blue"|"green"; lab
 };
 
 const LINE_COLOR: Record<Alert["sev"], string> = {
-  critical:"#ef4444", high:"#f59e0b", medium:"#2563eb", low:"#22c55e",
+  critical:"var(--danger)", high:"var(--warning)", medium:"var(--accent)", low:"var(--success)",
 };
 
 export default function AlertsPage() {
@@ -50,19 +50,19 @@ export default function AlertsPage() {
       <Topbar breadcrumb={t.alerts_title}>
         <BtnOutline onClick={markAll}><CheckCheck size={13} />{t.mark_read}</BtnOutline>
       </Topbar>
-      <main className="flex-1 overflow-y-auto p-6 page-enter" style={{ background: "#f8fafc" }}>
+      <main className="flex-1 overflow-y-auto p-6 page-enter" style={{ background: "var(--bg2)" }}>
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-[20px] font-extrabold mb-0.5" style={{ color: "#0f172a", letterSpacing: "-0.02em" }}>{t.alerts_title}</h1>
-            <p className="text-[12px]" style={{ color: "#94a3b8" }}>{unread} {t.unread}</p>
+            <h1 className="text-[20px] font-extrabold mb-0.5" style={{ color: "var(--text)", letterSpacing: "-0.02em" }}>{t.alerts_title}</h1>
+            <p className="text-[12px]" style={{ color: "var(--text-3)" }}>{unread} {t.unread}</p>
           </div>
-          <div className="flex gap-1.5 p-1 rounded-xl" style={{ background: "#f1f5f9" }}>
+          <div className="flex gap-1.5 p-1 rounded-xl" style={{ background: "var(--bg3)" }}>
             {FILTERS.map(({ key, label }) => (
               <button key={key} onClick={() => setFilter(key)}
                 className="px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all"
                 style={{
-                  background: filter === key ? "#fff" : "transparent",
-                  color: filter === key ? "#0f172a" : "#94a3b8",
+                  background: filter === key ? "var(--card-bg)" : "transparent",
+                  color: filter === key ? "var(--text)" : "var(--text-3)",
                   boxShadow: filter === key ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
                 }}>
                 {label}
@@ -91,17 +91,17 @@ export default function AlertsPage() {
                     <div className="flex items-center gap-2">
                       <div className="w-[3px] h-8 rounded-full flex-shrink-0"
                         style={{ background: LINE_COLOR[sev] }} />
-                      <span className="text-[12px] font-semibold" style={{ color: "#0f172a" }}>{title}</span>
+                      <span className="text-[12px] font-semibold" style={{ color: "var(--text)" }}>{title}</span>
                     </div>
                   </td>
-                  <td><code className="text-[10px]" style={{ color: "#2563eb" }}>{loc}</code></td>
-                  <td style={{ color: "#94a3b8" }}>{time}</td>
+                  <td><code className="text-[10px]" style={{ color: "var(--accent)" }}>{loc}</code></td>
+                  <td style={{ color: "var(--text-3)" }}>{time}</td>
                   <td><Badge variant={read ? "green" : "amber"}>{read ? t.resolved : t.open}</Badge></td>
                   <td>
                     {!read && (
                       <button onClick={() => markRead(id)}
                         className="p-1.5 rounded-lg transition-colors"
-                        style={{ background: "#f1f5f9", color: "#64748b" }}
+                        style={{ background: "var(--bg3)", color: "var(--text-2)" }}
                         title="Marcar como lido">
                         <Check size={12} />
                       </button>

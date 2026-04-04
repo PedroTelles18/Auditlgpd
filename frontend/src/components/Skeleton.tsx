@@ -7,7 +7,7 @@ export function DashboardSkeleton() {
     <div className="flex-1 flex flex-col min-w-0">
       {/* Topbar */}
       <div className="h-[58px] border-b flex items-center justify-between px-6 flex-shrink-0 bg-white"
-        style={{ borderColor: "#e2e8f4" }}>
+        style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center gap-2">
           <div className="skeleton h-3 w-16 rounded" />
           <div className="skeleton h-3 w-3 rounded" />
@@ -20,7 +20,7 @@ export function DashboardSkeleton() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-6" style={{ background: "#f8fafc" }}>
+      <div className="flex-1 p-6" style={{ background: "var(--bg2)" }}>
         <div className="skeleton h-6 w-40 rounded-lg mb-1.5" />
         <div className="skeleton h-3 w-56 rounded mb-6" />
 
@@ -71,10 +71,10 @@ export function DashboardSkeleton() {
 export function PageSkeleton() {
   return (
     <div className="flex-1 flex flex-col min-w-0">
-      <div className="h-[58px] border-b bg-white flex items-center px-6" style={{ borderColor: "#e2e8f4" }}>
+      <div className="h-[58px] border-b bg-white flex items-center px-6" style={{ borderColor: "var(--border)" }}>
         <div className="skeleton h-3 w-48 rounded" />
       </div>
-      <div className="flex-1 p-6" style={{ background: "#f8fafc" }}>
+      <div className="flex-1 p-6" style={{ background: "var(--bg2)" }}>
         <div className="skeleton h-6 w-48 rounded-lg mb-1.5" />
         <div className="skeleton h-3 w-64 rounded mb-6" />
         <div className="flex flex-col gap-2">
