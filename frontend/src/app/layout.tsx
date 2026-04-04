@@ -10,6 +10,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            var p = JSON.parse(localStorage.getItem('privyon_prefs') || '{}');
+            if (p.darkMode) document.documentElement.classList.add('dark');
+          } catch(e) {}
+        `}} />
+      </head>
       <body className="font-sans antialiased">
         <AuthProvider>
           {children}
@@ -18,12 +26,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-<head>
-  {/* Aplica dark mode ANTES do React carregar — evita piscar */}
-  <script dangerouslySetInnerHTML={{ __html: `
-    try {
-      var p = JSON.parse(localStorage.getItem('privyon_prefs') || '{}');
-      if (p.darkMode) document.documentElement.classList.add('dark');
-    } catch(e) {}
-  `}} />
-</head>
