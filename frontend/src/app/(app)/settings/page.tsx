@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, CheckCircle2, Eye, EyeOff, Bell, Key, Zap, Moon, Shield, Trash2, FileText, Globe } from "lucide-react";
+import { Save, CheckCircle2, Eye, EyeOff, Bell, Key, Zap, Moon, Shield, Trash2, FileText, Globe, Download } from "lucide-react";
 import { Topbar, Card, BtnPrimary } from "@/components/ui";
 import { useLang, Lang } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
+import Cookies from "js-cookie";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "pt-BR", label: "Português (Brasil)", flag: "🇧🇷" },
@@ -29,9 +32,10 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 export default function SettingsPage() {
   const { t, lang, setLang } = useLang();
   const { dark, toggle: toggleDark } = useTheme();
-  const [saved, setSaved]     = useState(false);
-  const [cleared, setCleared] = useState(false);
-  const [showKey, setShowKey] = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const [cleared, setCleared]   = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [showKey, setShowKey]   = useState(false);
 
   const [prefs, setPrefs] = useState({
     emailAlerts: true, criticalOnly: false, autoReport: false, alertInterval: "realtime",
@@ -40,27 +44,70 @@ export default function SettingsPage() {
     anonymizeLogs: false, shareMetrics: false,
   });
 
+  // Load prefs from localStorage
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("privyon_prefs") || "{}");
       setPrefs(p => ({ ...p, ...stored }));
+      // Apply compact mode on load
+      if (stored.compactMode) {
+        document.documentElement.classList.add("compact");
+      }
     } catch {}
   }, []);
 
   function set<K extends keyof typeof prefs>(key: K, val: typeof prefs[K]) {
-    setPrefs(p => ({ ...p, [key]: val }));
+    setPrefs(p => {
+      const next = { ...p, [key]: val };
+      // Apply compact mode immediately
+      if (key === "compactMode") {
+        document.documentElement.classList.toggle("compact", val as boolean);
+      }
+      return next;
+    });
   }
 
   function save() {
     localStorage.setItem("privyon_prefs", JSON.stringify({ ...prefs, language: lang }));
+    // Expose groqKey to analyze requests via a separate key
+    if (prefs.groqKey) {
+      localStorage.setItem("privyon_groq_key", prefs.groqKey);
+    } else {
+      localStorage.removeItem("privyon_groq_key");
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
 
   function clearHistory() {
     localStorage.removeItem("privyon_stats");
+    localStorage.removeItem("privyon_dbaudit_results");
+    sessionStorage.clear();
     setCleared(true);
     setTimeout(() => setCleared(false), 2500);
+  }
+
+  async function exportData() {
+    setExporting(true);
+    try {
+      const token = Cookies.get("access_token");
+      const limit = prefs.maxHistoryItems === "ilimitado" ? 1000 : parseInt(prefs.maxHistoryItems);
+      const res = await fetch(`${API_URL}/history/?limit=${limit}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = res.ok ? await res.json() : [];
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `privyon-export-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Erro ao exportar:", e);
+    } finally {
+      setExporting(false);
+    }
   }
 
   const Row = ({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) => (
@@ -100,7 +147,7 @@ export default function SettingsPage() {
     <div className="flex-1 flex flex-col min-w-0">
       <Topbar breadcrumb={t.settings_title}>
         <BtnPrimary onClick={save}>
-          {saved ? <><CheckCircle2 size={13} />{t.cleared}</> : <><Save size={13} />{t.save}</>}
+          {saved ? <><CheckCircle2 size={13} />Salvo!</> : <><Save size={13} />{t.save}</>}
         </BtnPrimary>
       </Topbar>
 
@@ -148,13 +195,13 @@ export default function SettingsPage() {
 
           {/* ── NOTIFICAÇÕES ── */}
           <Section icon={Bell} iconColor="var(--accent)" title={t.notifications}>
-            <Row label={t.email_alerts} desc="Receber alertas de violações detectadas">
+            <Row label={t.email_alerts} desc="Receber alertas de violações detectadas (requer configuração no backend)">
               <Toggle on={prefs.emailAlerts} onChange={v => set("emailAlerts", v)} />
             </Row>
             <Row label={t.critical_only} desc="Notificar somente severidade crítica">
               <Toggle on={prefs.criticalOnly} onChange={v => set("criticalOnly", v)} />
             </Row>
-            <Row label={t.auto_report} desc="Gerar PDF após cada auditoria">
+            <Row label={t.auto_report} desc="Gerar PDF automaticamente após cada auditoria">
               <Toggle on={prefs.autoReport} onChange={v => set("autoReport", v)} />
             </Row>
             <Row label={t.alert_freq} desc="Com qual frequência receber notificações">
@@ -165,7 +212,7 @@ export default function SettingsPage() {
 
           {/* ── INTEGRAÇÕES ── */}
           <Section icon={Key} iconColor="#7c3aed" title={t.integrations}>
-            <Row label={t.groq_key} desc="Para análise contextual com IA (Llama 3.3 70B)">
+            <Row label={t.groq_key} desc="Chave pessoal para análise com IA. Salva localmente, nunca enviada a terceiros.">
               <div className="flex items-center gap-2">
                 <input type={showKey ? "text" : "password"} value={prefs.groqKey}
                   onChange={e => set("groqKey", e.target.value)}
@@ -181,7 +228,7 @@ export default function SettingsPage() {
 
           {/* ── AUDITORIA ── */}
           <Section icon={Zap} iconColor="var(--warning)" title={t.audit_prefs}>
-            <Row label={t.scan_upload} desc="Iniciar análise ao enviar arquivos">
+            <Row label={t.scan_upload} desc="Iniciar análise ao enviar arquivos (lido pela página de análise)">
               <Toggle on={prefs.scanOnUpload} onChange={v => set("scanOnUpload", v)} />
             </Row>
             <Row label={t.report_logo} desc="Incluir logo Privyon no PDF gerado">
@@ -193,7 +240,7 @@ export default function SettingsPage() {
             <Row label={t.show_lines} desc="Mostrar linha do código com a violação">
               <Toggle on={prefs.showLineNumbers} onChange={v => set("showLineNumbers", v)} />
             </Row>
-            <Row label={t.max_history} desc="Quantidade de auditorias salvas">
+            <Row label={t.max_history} desc="Quantidade de auditorias salvas e exportadas">
               <Select value={prefs.maxHistoryItems} onChange={v => set("maxHistoryItems", v)}
                 options={MAX_HISTORY.map(v => ({ value: v, label: v }))} />
             </Row>
@@ -204,7 +251,7 @@ export default function SettingsPage() {
             <Row label="Modo escuro" desc="Ativa o tema escuro em todo o sistema instantaneamente">
               <Toggle on={dark} onChange={() => toggleDark()} />
             </Row>
-            <Row label={t.compact_mode} desc="Reduzir espaçamento para mais conteúdo visível">
+            <Row label={t.compact_mode} desc="Reduzir espaçamento para mais conteúdo visível (aplicado imediatamente)">
               <Toggle on={prefs.compactMode} onChange={v => set("compactMode", v)} />
             </Row>
           </Section>
@@ -221,7 +268,7 @@ export default function SettingsPage() {
 
           {/* ── DADOS ── */}
           <Section icon={Trash2} iconColor="var(--danger)" title={t.data}>
-            <Row label={t.clear_history} desc="Remove estatísticas salvas no navegador">
+            <Row label={t.clear_history} desc="Remove cache local de auditorias do navegador">
               <button onClick={clearHistory}
                 className="px-3.5 py-1.5 rounded-lg text-[12px] font-bold transition-all"
                 style={{
@@ -229,13 +276,17 @@ export default function SettingsPage() {
                   border: `1.5px solid ${cleared ? "var(--success-m)" : "var(--border)"}`,
                   color: cleared ? "#15803d" : "var(--text-2)",
                 }}>
-                {cleared ? t.cleared : t.clear}
+                {cleared ? "✓ Limpo!" : t.clear}
               </button>
             </Row>
-            <Row label={t.export_data} desc="Baixar todas as suas auditorias em JSON">
-              <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12px] font-bold transition-colors"
+            <Row label={t.export_data} desc={`Baixar suas últimas ${prefs.maxHistoryItems} auditorias em JSON`}>
+              <button onClick={exportData} disabled={exporting}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12px] font-bold transition-colors disabled:opacity-60"
                 style={{ border: "1.5px solid #e2e8f4", background: "var(--card-bg)", color: "var(--text-2)" }}>
-                <FileText size={12} />{t.reports}
+                {exporting
+                  ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                  : <Download size={12} />}
+                {exporting ? "Exportando..." : "Exportar JSON"}
               </button>
             </Row>
           </Section>
