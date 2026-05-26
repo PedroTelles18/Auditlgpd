@@ -18,6 +18,24 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Bloqueia escrita para conta demo — dados simulados não vão ao banco
+const WRITE_METHODS = ["post", "put", "patch", "delete"];
+api.interceptors.request.use((config) => {
+  const isDemo = localStorage.getItem("privyon_is_demo") === "1";
+  const method = config.method?.toLowerCase() ?? "";
+  if (isDemo && WRITE_METHODS.includes(method)) {
+    return Promise.reject({
+      isDemo: true,
+      message: "Conta demonstração — alterações não são salvas.",
+    });
+  }
+  return config;
+});
+
+export function setDemoMode(val: boolean) {
+  localStorage.setItem("privyon_is_demo", val ? "1" : "0");
+}
+
 // Redireciona para login se 401
 api.interceptors.response.use(
   (res) => res,
