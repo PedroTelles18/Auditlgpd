@@ -36,6 +36,7 @@ export default function LoginPage() {
   async function onSubmit(data: LoginFormData) {
     setErr(null);
     try {
+      localStorage.removeItem("privyon_is_demo");
       await login(data);
       await refresh();
       router.push("/dashboard");

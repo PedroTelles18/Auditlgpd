@@ -23,7 +23,8 @@ const WRITE_METHODS = ["post", "put", "patch", "delete"];
 api.interceptors.request.use((config) => {
   const isDemo = localStorage.getItem("privyon_is_demo") === "1";
   const method = config.method?.toLowerCase() ?? "";
-  if (isDemo && WRITE_METHODS.includes(method)) {
+  const isLoginRoute = config.url?.includes("/auth/login");
+  if (isDemo && WRITE_METHODS.includes(method) && !isLoginRoute) {
     return Promise.reject({
       isDemo: true,
       message: "Conta demonstração — alterações não são salvas.",
@@ -69,6 +70,7 @@ export async function login(data: LoginFormData): Promise<AuthResponse> {
 
 export function logout() {
   Cookies.remove("access_token");
+  localStorage.removeItem("privyon_is_demo");
   window.location.href = "/login";
 }
 
