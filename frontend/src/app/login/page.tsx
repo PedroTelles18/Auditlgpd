@@ -25,8 +25,8 @@ const FEATURES = [
 export default function LoginPage() {
   const router = useRouter();
   const { refresh } = useAuth();
-  const [showPw, setShowPw]   = useState(false);
-  const [serverErr, setErr]   = useState<string | null>(null);
+  const [showPw, setShowPw]     = useState(false);
+  const [serverErr, setErr]     = useState<string | null>(null);
   const [demoLoad, setDemoLoad] = useState(false);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
@@ -37,9 +37,14 @@ export default function LoginPage() {
     setErr(null);
     try {
       localStorage.removeItem("privyon_is_demo");
-      await login(data);
+      const response = await login(data);
       await refresh();
-      router.push("/dashboard");
+      // Admin vai para /admin, demais usuários vão para /dashboard
+      if (response.user.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch {
       setErr("Credenciais inválidas. Verifique seu e-mail e senha.");
     }

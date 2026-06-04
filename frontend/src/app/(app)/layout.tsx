@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, LogOut, LayoutDashboard, FileCode2, Database, FileText, Bell, Settings, User, ChevronRight, Activity } from "lucide-react";
+import { ShieldCheck, LogOut, LayoutDashboard, FileCode2, Database, FileText, Bell, Settings, User, ChevronRight, Activity, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { LanguageProvider, useLang } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
@@ -47,6 +47,13 @@ function AppInner({ children }: { children: React.ReactNode }) {
       { icon: Settings, label: t.settings, href: "/settings" },
       { icon: User,     label: t.profile,  href: "/profile"  },
     ]},
+    // Só aparece para admins
+    ...(user?.role === "admin" ? [{
+      section: "Sistema",
+      items: [
+        { icon: ShieldAlert, label: "Painel Admin", href: "/admin" },
+      ],
+    }] : []),
   ];
 
   if (loading || !user) return (
@@ -84,7 +91,7 @@ function AppInner({ children }: { children: React.ReactNode }) {
               <p className="text-[9px] font-black uppercase px-2.5 py-2 mt-1"
                 style={{ color: "rgba(255,255,255,0.2)", letterSpacing: "0.12em" }}>{section}</p>
               {items.map(({ icon: Icon, label, href, badge }) => {
-                const active = pathname === href;
+                const active = pathname === href || pathname.startsWith(href + "/");
                 return (
                   <Link key={href} href={href}
                     className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-0.5 text-[12px] font-semibold transition-all relative"
