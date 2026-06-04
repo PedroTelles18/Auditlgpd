@@ -205,9 +205,13 @@ export default function AdminPage() {
   const [toast, setToast] = useState<{ msg: string; type: "ok" | "err" } | null>(null);
 
   // Form create/edit
-  const [form, setForm] = useState({
-    name: "", email: "", password: "", role: "auditor" as const,
-    plan: "starter", allowed_modules: [] as string[],
+  const [form, setForm] = useState<{
+    name: string; email: string; password: string;
+    role: "admin" | "auditor" | "viewer";
+    plan: string; allowed_modules: string[];
+  }>({
+    name: "", email: "", password: "", role: "auditor",
+    plan: "starter", allowed_modules: [],
   });
   const [showPwd, setShowPwd] = useState(false);
 
