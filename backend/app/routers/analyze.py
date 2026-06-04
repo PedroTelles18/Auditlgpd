@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from sqlalchemy.orm import Session
 from typing import List
 
 from app.analyzer.engine import CodeAnalyzer
@@ -7,6 +8,8 @@ from app.analyzer.groq_ai import analyze_with_groq
 from app.schemas.analysis import AnalysisSummary, FileAnalysisOut, FindingOut
 from app.core.security import get_current_user
 from app.models.user import User
+from app.models.audit_history import AuditHistory
+from app.database import get_db
 
 router = APIRouter(prefix="/analyze", tags=["Análise de Código"])
 
@@ -20,6 +23,7 @@ MAX_AI_FINDINGS = 3
 async def analyze_code(
     files: List[UploadFile] = File(...),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     if not files:
         raise HTTPException(status_code=400, detail="Nenhum arquivo enviado.")
@@ -61,7 +65,7 @@ async def analyze_code(
 
     all_findings = [f for r in all_results for f in r.findings]
 
-    return AnalysisSummary(
+    summary = AnalysisSummary(
         total_files=len(all_results),
         total_findings=len(all_findings),
         critical=sum(1 for f in all_findings if f.severity == "critical"),
@@ -94,6 +98,34 @@ async def analyze_code(
             for r in all_results
         ],
     )
+
+    # Salva automaticamente no histórico
+    total = len(all_findings)
+    critical_count = sum(1 for f in all_findings if f.severity == "critical")
+    high_count = sum(1 for f in all_findings if f.severity == "high")
+    score = max(0.0, 100.0 - (critical_count * 15) - (high_count * 8) - (sum(1 for f in all_findings if f.severity == "medium") * 3))
+    filenames = ", ".join(r.filename for r in all_results[:3])
+    title = f"Análise — {filenames}" + (" ..." if len(all_results) > 3 else "")
+    try:
+        import json
+        record = AuditHistory(
+            user_id=current_user.id,
+            audit_type="code",
+            title=title,
+            total_findings=total,
+            critical=critical_count,
+            high=high_count,
+            medium=sum(1 for f in all_findings if f.severity == "medium"),
+            low=sum(1 for f in all_findings if f.severity == "low"),
+            score=round(score, 1),
+            result_data=json.loads(summary.model_dump_json()),
+        )
+        db.add(record)
+        db.commit()
+    except Exception:
+        pass  # Não falha a auditoria se o histórico der erro
+
+    return summary
 
 
 @router.get("/status")

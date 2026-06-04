@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base
-from app.routers import auth, analyze, db_audit, reports
+from app.routers import auth, analyze, db_audit, reports, history
 
 # Cria tabelas no banco na inicialização
 Base.metadata.create_all(bind=engine)
@@ -37,6 +37,7 @@ app.include_router(auth.router)
 app.include_router(analyze.router)
 app.include_router(db_audit.router)
 app.include_router(reports.router)
+app.include_router(history.router)
 
 
 @app.get("/", tags=["Health"])
