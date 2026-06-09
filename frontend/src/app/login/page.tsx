@@ -9,6 +9,7 @@ import { ShieldCheck, Eye, EyeOff, Loader2 } from "lucide-react";
 import { login } from "@/lib/auth";
 import type { LoginFormData } from "@/types/auth";
 import { useAuth } from "@/context/AuthContext";
+import PrivyonLogo from "@/components/PrivyonLogo";
 
 const loginSchema = z.object({
   email:    z.string().email("E-mail inválido"),
@@ -79,15 +80,8 @@ export default function LoginPage() {
           style={{ background: "radial-gradient(circle at 70% 70%, #3b82f6, transparent 70%)" }} />
 
         {/* Logo */}
-        <div className="flex items-center gap-3 z-10">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "#3b82f6", boxShadow: "0 4px 12px rgba(59,130,246,0.5)" }}>
-            <ShieldCheck size={20} color="white" />
-          </div>
-          <span className="text-[22px] font-extrabold text-white tracking-tight">
-            Priv<span style={{ color: "#3b82f6" }}>yon</span>
-          </span>
-        </div>
+        <div className="z-10">
+          <PrivyonLogo height={32} />
 
         {/* Mid */}
         <div className="z-10">

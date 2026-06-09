@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ShieldCheck, ArrowLeft, Home } from "lucide-react";
+import { ArrowLeft, Home } from "lucide-react";
+import PrivyonLogo from "@/components/PrivyonLogo";
 
 export default function NotFound() {
   const router = useRouter();
@@ -34,12 +35,8 @@ export default function NotFound() {
         style={{ background: "#00e5ff", top: "20%", left: "50%", transform: "translateX(-50%)" }} />
 
       {/* Logo */}
-      <div className="flex items-center gap-2 mb-16 fade-in">
-        <ShieldCheck size={18} className="text-accent" />
-        <span className="font-bold text-white text-sm tracking-tight">
-          Priv<span className="text-accent">yon</span>
-        </span>
-      </div>
+      <div className="mb-16 fade-in">
+        <PrivyonLogo height={26} />
 
       {/* 404 glitch */}
       <div className="relative mb-6 page-enter">

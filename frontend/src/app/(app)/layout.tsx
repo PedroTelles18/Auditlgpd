@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, LogOut, LayoutDashboard, FileCode2, Database, FileText, Bell, Settings, User, ChevronRight, Activity, ShieldAlert } from "lucide-react";
+import { LogOut, LayoutDashboard, FileCode2, Database, FileText, Bell, Settings, User, ChevronRight, Activity, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { LanguageProvider, useLang } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import OnboardingTour from "@/components/OnboardingTour";
+import PrivyonLogo from "@/components/PrivyonLogo";
 import { DashboardSkeleton } from "@/components/Skeleton";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -78,11 +79,7 @@ function AppInner({ children }: { children: React.ReactNode }) {
         style={{ width: 225, background: "#0f1629", borderRight: "1px solid rgba(255,255,255,0.04)" }}>
         <div className="h-[58px] flex items-center gap-2.5 px-4 flex-shrink-0"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center"
-            style={{ background: "#3b82f6", boxShadow: "0 2px 8px rgba(59,130,246,0.4)" }}>
-            <ShieldCheck size={16} color="white" />
-          </div>
-          <span className="text-[16px] font-extrabold text-white">Priv<span style={{ color: "#3b82f6" }}>yon</span></span>
+          <PrivyonLogo height={28} />
           <span className="ml-auto text-[9px] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>v1.0</span>
         </div>
         <nav className="flex-1 overflow-y-auto py-2 px-2.5">
