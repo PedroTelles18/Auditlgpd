@@ -6,7 +6,7 @@ GET  /history/{id}/pdf  — gera PDF de uma auditoria salva
 DELETE /history/{id}    — remove uma auditoria
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -18,6 +18,7 @@ from app.core.security import get_current_user
 from app.models.audit_history import AuditHistory
 from app.models.user import User
 from app.reports.pdf_generator import generate_code_analysis_pdf, generate_db_audit_pdf
+from app.services.audit import log_event  # ← ADD
 
 router = APIRouter(prefix="/history", tags=["History"])
 
@@ -65,32 +66,52 @@ async def list_history(
 
 @router.post("/")
 async def save_audit(
-    request: SaveAuditRequest,
+    request: Request,  # ← ADD
+    request_body: SaveAuditRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Salva o resultado de uma auditoria no histórico."""
     record = AuditHistory(
         user_id=current_user.id,
-        audit_type=request.audit_type,
-        title=request.title,
-        total_findings=request.total_findings,
-        critical=request.critical,
-        high=request.high,
-        medium=request.medium,
-        low=request.low,
-        score=request.score,
-        result_data=request.result_data,
+        audit_type=request_body.audit_type,
+        title=request_body.title,
+        total_findings=request_body.total_findings,
+        critical=request_body.critical,
+        high=request_body.high,
+        medium=request_body.medium,
+        low=request_body.low,
+        score=request_body.score,
+        result_data=request_body.result_data,
     )
     db.add(record)
     db.commit()
     db.refresh(record)
+
+    # ← ADD: registra criação (essa rota é usada para salvar auditorias tipo "db", por ex.)
+    log_event(
+        db=db,
+        event_type="audit.created",
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        entity_type="audit_history",
+        entity_id=record.id,
+        payload_after={
+            "audit_type": record.audit_type,
+            "title": record.title,
+            "total_findings": record.total_findings,
+            "score": record.score,
+        },
+        request=request,
+    )
+
     return {"id": str(record.id), "message": "Auditoria salva com sucesso"}
 
 
 @router.get("/{audit_id}/pdf")
 async def download_pdf(
     audit_id: str,
+    request: Request,  # ← ADD
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -125,6 +146,18 @@ async def download_pdf(
             )
             filename = "privyon-db-audit.pdf"
 
+        # ← ADD: registra exportação de relatório (acesso/saída de dado é sempre relevante para LGPD)
+        log_event(
+            db=db,
+            event_type="audit.exported",
+            actor_id=current_user.id,
+            actor_role=current_user.role,
+            entity_type="audit_history",
+            entity_id=record.id,
+            metadata={"format": "pdf", "filename": filename},
+            request=request,
+        )
+
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
@@ -137,6 +170,7 @@ async def download_pdf(
 @router.delete("/{audit_id}")
 async def delete_audit(
     audit_id: str,
+    request: Request,  # ← ADD
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -154,6 +188,27 @@ async def delete_audit(
     if not record:
         raise HTTPException(status_code=404, detail="Auditoria não encontrada")
 
+    # ← ADD: captura os dados antes de apagar, para o log guardar o que foi perdido
+    deleted_snapshot = {
+        "audit_type": record.audit_type,
+        "title": record.title,
+        "total_findings": record.total_findings,
+        "score": record.score,
+    }
+
     db.delete(record)
     db.commit()
+
+    # ← ADD: registra a exclusão (é IMPORTANTE que o log sobreviva mesmo depois do dado original sumir)
+    log_event(
+        db=db,
+        event_type="audit.deleted",
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        entity_type="audit_history",
+        entity_id=record_id,
+        payload_before=deleted_snapshot,
+        request=request,
+    )
+
     return {"message": "Auditoria removida"}

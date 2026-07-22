@@ -1,7 +1,7 @@
 # backend/app/routers/admin.py
 # ARQUIVO NOVO — adicione no main.py: app.include_router(admin.router)
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.user import User, UserRole, AVAILABLE_MODULES, PLANS
 from app.schemas.user import UserCreate, UserUpdate, UserOut, UserResetPassword, ModulesMeta
 from app.core.security import hash_password, get_current_user, require_admin
+from app.services.audit import log_event  # ← ADD
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -79,8 +80,9 @@ def list_users(
 @router.post("/users", response_model=UserOut, status_code=201)
 def create_user(
     data: UserCreate,
+    request: Request,  # ← ADD
     db:   Session = Depends(get_db),
-    _:    User    = Depends(require_admin),
+    current: User = Depends(require_admin),  # ← renomeado de "_" para "current" para usar no log
 ):
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
@@ -99,6 +101,19 @@ def create_user(
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # ← ADD: registra criação de usuário pelo admin
+    log_event(
+        db=db,
+        event_type="user.created",
+        actor_id=current.id,
+        actor_role=current.role,
+        entity_type="user",
+        entity_id=user.id,
+        payload_after={"name": user.name, "email": user.email, "role": user.role, "plan": user.plan},
+        request=request,
+    )
+
     return user
 
 
@@ -122,12 +137,17 @@ def get_user(
 def update_user(
     user_id: UUID,
     data:    UserUpdate,
+    request: Request,  # ← ADD
     db:      Session = Depends(get_db),
     current: User    = Depends(require_admin),
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    # ← ADD: captura estado antes da alteração
+    before = {"name": user.name, "email": user.email, "role": user.role, "is_active": user.is_active, "plan": user.plan}
+    role_before = user.role
 
     if data.name       is not None: user.name      = data.name
     if data.email      is not None:
@@ -148,6 +168,34 @@ def update_user(
 
     db.commit()
     db.refresh(user)
+
+    # ← ADD: registra a edição geral
+    log_event(
+        db=db,
+        event_type="user.updated",
+        actor_id=current.id,
+        actor_role=current.role,
+        entity_type="user",
+        entity_id=user.id,
+        payload_before=before,
+        payload_after={"name": user.name, "email": user.email, "role": user.role, "is_active": user.is_active, "plan": user.plan},
+        request=request,
+    )
+
+    # ← ADD: se o role mudou, gera um evento específico (é o mais sensível para auditoria de segurança)
+    if data.role is not None and data.role != role_before:
+        log_event(
+            db=db,
+            event_type="user.role_changed",
+            actor_id=current.id,
+            actor_role=current.role,
+            entity_type="user",
+            entity_id=user.id,
+            payload_before={"role": role_before},
+            payload_after={"role": user.role},
+            request=request,
+        )
+
     return user
 
 
@@ -156,6 +204,7 @@ def update_user(
 @router.patch("/users/{user_id}/toggle-active", response_model=UserOut)
 def toggle_active(
     user_id: UUID,
+    request: Request,  # ← ADD
     db:      Session = Depends(get_db),
     current: User    = Depends(require_admin),
 ):
@@ -164,9 +213,25 @@ def toggle_active(
         raise HTTPException(status_code=404, detail="Usuário não encontrado.")
     if str(user.id) == str(current.id):
         raise HTTPException(status_code=400, detail="Você não pode desativar sua própria conta.")
+
+    was_active = user.is_active
     user.is_active = not user.is_active
     db.commit()
     db.refresh(user)
+
+    # ← ADD: registra ativação ou desativação (eventos diferentes, mais fácil de filtrar depois)
+    log_event(
+        db=db,
+        event_type="user.deactivated" if was_active else "user.reactivated",
+        actor_id=current.id,
+        actor_role=current.role,
+        entity_type="user",
+        entity_id=user.id,
+        payload_before={"is_active": was_active},
+        payload_after={"is_active": user.is_active},
+        request=request,
+    )
+
     return user
 
 
@@ -176,8 +241,9 @@ def toggle_active(
 def reset_password(
     user_id: UUID,
     data:    UserResetPassword,
+    request: Request,  # ← ADD
     db:      Session = Depends(get_db),
-    _:       User    = Depends(require_admin),
+    current: User = Depends(require_admin),  # ← renomeado de "_" para "current" para usar no log
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -187,6 +253,19 @@ def reset_password(
     user.hashed_password = hash_password(data.new_password)
     db.commit()
     db.refresh(user)
+
+    # ← ADD: registra reset de senha feito por admin (NUNCA logar a senha em si, só o evento)
+    log_event(
+        db=db,
+        event_type="user.password_changed",
+        actor_id=current.id,
+        actor_role=current.role,
+        entity_type="user",
+        entity_id=user.id,
+        metadata={"reset_by_admin": True},
+        request=request,
+    )
+
     return user
 
 

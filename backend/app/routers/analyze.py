@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Request
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -10,6 +10,7 @@ from app.core.security import get_current_user
 from app.models.user import User
 from app.models.audit_history import AuditHistory
 from app.database import get_db
+from app.services.audit import log_event  # ← ADD
 
 router = APIRouter(prefix="/analyze", tags=["Análise de Código"])
 
@@ -21,6 +22,7 @@ MAX_AI_FINDINGS = 3
 
 @router.post("/code", response_model=AnalysisSummary)
 async def analyze_code(
+    request: Request,  # ← ADD
     files: List[UploadFile] = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -103,7 +105,9 @@ async def analyze_code(
     total = len(all_findings)
     critical_count = sum(1 for f in all_findings if f.severity == "critical")
     high_count = sum(1 for f in all_findings if f.severity == "high")
-    score = max(0.0, 100.0 - (critical_count * 15) - (high_count * 8) - (sum(1 for f in all_findings if f.severity == "medium") * 3))
+    medium_count = sum(1 for f in all_findings if f.severity == "medium")
+    low_count = sum(1 for f in all_findings if f.severity == "low")
+    score = max(0.0, 100.0 - (critical_count * 15) - (high_count * 8) - (medium_count * 3))
     filenames = ", ".join(r.filename for r in all_results[:3])
     title = f"Análise — {filenames}" + (" ..." if len(all_results) > 3 else "")
     try:
@@ -115,13 +119,35 @@ async def analyze_code(
             total_findings=total,
             critical=critical_count,
             high=high_count,
-            medium=sum(1 for f in all_findings if f.severity == "medium"),
-            low=sum(1 for f in all_findings if f.severity == "low"),
+            medium=medium_count,
+            low=low_count,
             score=round(score, 1),
             result_data=json.loads(summary.model_dump_json()),
         )
         db.add(record)
         db.commit()
+        db.refresh(record)
+
+        # ← ADD: registra a criação da auditoria no audit_log, ligando ao registro do audit_history
+        log_event(
+            db=db,
+            event_type="audit.created",
+            actor_id=current_user.id,
+            actor_role=current_user.role,
+            entity_type="audit_history",
+            entity_id=record.id,
+            payload_after={
+                "audit_type": "code",
+                "title": title,
+                "total_findings": total,
+                "critical": critical_count,
+                "high": high_count,
+                "medium": medium_count,
+                "low": low_count,
+                "score": round(score, 1),
+            },
+            request=request,
+        )
     except Exception:
         pass  # Não falha a auditoria se o histórico der erro
 
