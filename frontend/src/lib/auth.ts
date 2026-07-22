@@ -49,11 +49,17 @@ api.interceptors.response.use(
   }
 );
 
-export async function login(data: LoginFormData): Promise<AuthResponse> {
+// ← ADD: recebe o token do Turnstile como segundo parâmetro
+export async function login(data: LoginFormData, captchaToken?: string): Promise<AuthResponse> {
   // FastAPI espera form-data para /token, não JSON
   const formData = new URLSearchParams();
   formData.append("username", data.email);
   formData.append("password", data.password);
+
+  // ← ADD: envia o token do captcha junto (o backend valida antes de checar a senha)
+  if (captchaToken) {
+    formData.append("captcha_token", captchaToken);
+  }
 
   const res = await api.post<AuthResponse>("/auth/login", formData, {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },

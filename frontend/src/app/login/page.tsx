@@ -10,6 +10,7 @@ import { login } from "@/lib/auth";
 import type { LoginFormData } from "@/types/auth";
 import { useAuth } from "@/context/AuthContext";
 import PrivyonLogo from "@/components/PrivyonLogo";
+import TurnstileWidget from "@/components/TurnstileWidget"; // ← ADD
 
 const loginSchema = z.object({
   email:    z.string().email("E-mail inválido"),
@@ -29,6 +30,7 @@ export default function LoginPage() {
   const [showPw, setShowPw]     = useState(false);
   const [serverErr, setErr]     = useState<string | null>(null);
   const [demoLoad, setDemoLoad] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null); // ← ADD
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -36,9 +38,17 @@ export default function LoginPage() {
 
   async function onSubmit(data: LoginFormData) {
     setErr(null);
+
+    // ← ADD: bloqueia envio se o captcha ainda não foi resolvido
+    // (só bloqueia de verdade se a site key estiver configurada — ver TurnstileWidget)
+    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+      setErr("Confirme que você não é um robô antes de continuar.");
+      return;
+    }
+
     try {
       localStorage.removeItem("privyon_is_demo");
-      const response = await login(data);
+      const response = await login(data, captchaToken || undefined); // ← ADD token
       await refresh();
       // Admin vai para /admin, demais usuários vão para /dashboard
       if (response.user.role === "admin") {
@@ -163,12 +173,18 @@ export default function LoginPage() {
               {errors.password && <p className="text-[11px] mt-1" style={{ color: "#ef4444" }}>{errors.password.message}</p>}
             </div>
 
-            <div className="flex justify-end mb-5">
+            <div className="flex justify-end mb-4">
               <button type="button" className="text-[12px] font-semibold transition-colors"
                 style={{ color: "#2563eb" }}>
                 Esqueci minha senha
               </button>
             </div>
+
+            {/* ← ADD: widget do captcha, antes do botão de submit */}
+            <TurnstileWidget
+              onVerify={(token) => setCaptchaToken(token)}
+              onExpire={() => setCaptchaToken(null)}
+            />
 
             {serverErr && (
               <div className="mb-4 px-3.5 py-2.5 rounded-lg text-[12px]"

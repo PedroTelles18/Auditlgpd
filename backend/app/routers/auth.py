@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from typing import Optional
 
 from app.database import get_db
 from app.models.user import User
@@ -11,18 +12,38 @@ from app.core.security import (
     create_access_token,
     get_current_user,
 )
-from app.services.audit import log_event  # ← ADD
+from app.services.audit import log_event
+from app.services.turnstile import verify_turnstile  # ← ADD
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
 
 @router.post("/login", response_model=Token)
 def login(
-    request: Request,  # ← ADD (precisa vir antes dos Depends por causa da ordem do FastAPI)
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
+    captcha_token: Optional[str] = Form(None),  # ← ADD: vem do frontend junto com username/password
     db: Session = Depends(get_db),
 ):
     """Login com e-mail e senha. Retorna JWT."""
+
+    # ← ADD: valida o captcha ANTES de qualquer consulta ao banco
+    client_ip = request.client.host if request.client else None
+    if not verify_turnstile(captcha_token, client_ip):
+        log_event(
+            db=db,
+            event_type="user.login_failed",
+            actor_id="00000000-0000-0000-0000-000000000000",
+            actor_role=None,
+            entity_type="user",
+            metadata={"reason": "captcha_failed", "attempted_email": form_data.username},
+            request=request,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Falha na verificação de segurança. Tente novamente.",
+        )
+
     user = db.query(User).filter(User.email == form_data.username).first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):

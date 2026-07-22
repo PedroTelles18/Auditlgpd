@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     FRONTEND_URL: str = "http://localhost:3000"
     GROQ_API_KEY: Optional[str] = None
+    TURNSTILE_SECRET_KEY: Optional[str] = None  # ← ADD: chave secreta do Cloudflare Turnstile
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
