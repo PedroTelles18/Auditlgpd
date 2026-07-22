@@ -62,17 +62,24 @@ export default function LoginPage() {
   }
 
   async function loginDemo() {
-    setErr(null);
-    setDemoLoad(true);
-    try {
-      await login({ email: "demo@privyon.com.br", password: "demo1234" });
-      await refresh();
-      localStorage.removeItem("privyon_onboarded");
-      router.push("/dashboard");
-    } catch {
-      setErr("Conta demo temporariamente indisponível.");
-    } finally { setDemoLoad(false); }
+  setErr(null);
+
+  // Conta demo também precisa do captcha, senão o backend bloqueia
+  if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+    setErr("Confirme que você não é um robô antes de continuar.");
+    return;
   }
+
+  setDemoLoad(true);
+  try {
+    await login({ email: "demo@privyon.com.br", password: "demo1234" }, captchaToken || undefined);
+    await refresh();
+    localStorage.removeItem("privyon_onboarded");
+    router.push("/dashboard");
+  } catch {
+    setErr("Conta demo temporariamente indisponível.");
+  } finally { setDemoLoad(false); }
+}
 
   return (
     <div className="min-h-screen flex">
