@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -11,12 +11,14 @@ from app.core.security import (
     create_access_token,
     get_current_user,
 )
+from app.services.audit import log_event  # ← ADD
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
 
 @router.post("/login", response_model=Token)
 def login(
+    request: Request,  # ← ADD (precisa vir antes dos Depends por causa da ordem do FastAPI)
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
@@ -24,6 +26,17 @@ def login(
     user = db.query(User).filter(User.email == form_data.username).first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
+        # ← ADD: registra tentativa de login que falhou (importante para segurança)
+        log_event(
+            db=db,
+            event_type="user.login_failed",
+            actor_id=user.id if user else "00000000-0000-0000-0000-000000000000",
+            actor_role=user.role if user else None,
+            entity_type="user",
+            entity_id=user.id if user else None,
+            metadata={"attempted_email": form_data.username},
+            request=request,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="E-mail ou senha incorretos",
@@ -34,6 +47,17 @@ def login(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuário inativo. Contate o administrador.",
         )
+
+    # ← ADD: registra login bem-sucedido
+    log_event(
+        db=db,
+        event_type="user.login",
+        actor_id=user.id,
+        actor_role=user.role,
+        entity_type="user",
+        entity_id=user.id,
+        request=request,
+    )
 
     token = create_access_token({"sub": str(user.id)})
     return Token(access_token=token, user=UserOut.model_validate(user))
@@ -48,6 +72,7 @@ def get_me(current_user: User = Depends(get_current_user)):
 @router.post("/register", response_model=UserOut, status_code=201)
 def register(
     data: UserCreate,
+    request: Request,  # ← ADD
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -74,4 +99,17 @@ def register(
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # ← ADD: registra criação de usuário (quem criou, quem foi criado, com qual role)
+    log_event(
+        db=db,
+        event_type="user.created",
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        entity_type="user",
+        entity_id=user.id,
+        payload_after={"name": user.name, "email": user.email, "role": user.role},
+        request=request,
+    )
+
     return user
