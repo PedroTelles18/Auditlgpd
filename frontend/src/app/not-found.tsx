@@ -37,6 +37,7 @@ export default function NotFound() {
       {/* Logo */}
       <div className="mb-16 fade-in">
         <PrivyonLogo height={26} />
+      </div>
 
       {/* 404 glitch */}
       <div className="relative mb-6 page-enter">
