@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.database import get_db
-from app.models.user import User
-from app.schemas.user import Token, UserOut, UserCreate
+from app.models.user import User, ACCENT_COLORS, THEME_MODES  # ← ADD
+from app.schemas.user import Token, UserOut, UserCreate, ThemeUpdate, ThemeMeta  # ← ADD
 from app.core.security import (
     hash_password,
     verify_password,
@@ -13,7 +13,7 @@ from app.core.security import (
     get_current_user,
 )
 from app.services.audit import log_event
-from app.services.turnstile import verify_turnstile  # ← ADD
+from app.services.turnstile import verify_turnstile
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
@@ -134,3 +134,48 @@ def register(
     )
 
     return user
+
+
+# ══════════════════════════════════════════════════════════
+# ← ADD: Customização visual — cada usuário escolhe a própria
+# ══════════════════════════════════════════════════════════
+
+@router.get("/theme-meta", response_model=ThemeMeta)
+def get_theme_meta():
+    """Retorna as opções válidas de cor/modo, para o front montar o seletor."""
+    return ThemeMeta(accent_colors=ACCENT_COLORS, modes=THEME_MODES)
+
+
+@router.patch("/me/theme", response_model=UserOut)
+def update_my_theme(
+    data: ThemeUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Salva a preferência visual (cor de destaque / claro-escuro) do usuário logado."""
+    before = dict(current_user.theme_preferences or {})
+    updated = dict(current_user.theme_preferences or {})
+
+    if data.accent is not None:
+        updated["accent"] = data.accent
+    if data.mode is not None:
+        updated["mode"] = data.mode
+
+    current_user.theme_preferences = updated
+    db.commit()
+    db.refresh(current_user)
+
+    log_event(
+        db=db,
+        event_type="user.theme_updated",
+        actor_id=current_user.id,
+        actor_role=current_user.role,
+        entity_type="user",
+        entity_id=current_user.id,
+        payload_before={"theme_preferences": before},
+        payload_after={"theme_preferences": updated},
+        request=request,
+    )
+
+    return current_user
