@@ -45,6 +45,11 @@ class User(Base):
     role            = Column(SAEnum(UserRole), default=UserRole.auditor, nullable=False)
     is_active       = Column(Boolean, default=True, nullable=False)
 
+    # ← ADD: acesso ao painel de debug/logs técnicos (RBAC granular).
+    # Separado do "role" de negócio, porque o time de TI/segurança do cliente
+    # pode precisar ver logs e configs sem ser um "admin" que gerencia usuários/planos.
+    is_security_admin = Column(Boolean, default=False, nullable=False)
+
     # Plano do cliente (starter | pro | enterprise | custom)
     plan            = Column(String(50), default="starter", nullable=False)
 

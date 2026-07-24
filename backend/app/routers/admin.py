@@ -1,16 +1,28 @@
 # backend/app/routers/admin.py
 # ARQUIVO NOVO — adicione no main.py: app.include_router(admin.router)
 
+import sys
+import platform
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
+from sqlalchemy import func as sa_func, text
 from typing import List, Optional
 from uuid import UUID
 
 from app.database import get_db
 from app.models.user import User, UserRole, AVAILABLE_MODULES, PLANS
+from app.models.audit_log import AuditLog  # ← ADD
 from app.schemas.user import UserCreate, UserUpdate, UserOut, UserResetPassword, ModulesMeta
-from app.core.security import hash_password, get_current_user, require_admin
+from app.core.security import (
+    hash_password,
+    get_current_user,
+    require_admin,
+    require_security_admin,  # ← ADD
+)
 from app.services.audit import log_event  # ← ADD
+from app.config import settings  # ← ADD
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -80,9 +92,9 @@ def list_users(
 @router.post("/users", response_model=UserOut, status_code=201)
 def create_user(
     data: UserCreate,
-    request: Request,  # ← ADD
+    request: Request,
     db:   Session = Depends(get_db),
-    current: User = Depends(require_admin),  # ← renomeado de "_" para "current" para usar no log
+    current: User = Depends(require_admin),
 ):
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
@@ -102,7 +114,6 @@ def create_user(
     db.commit()
     db.refresh(user)
 
-    # ← ADD: registra criação de usuário pelo admin
     log_event(
         db=db,
         event_type="user.created",
@@ -137,7 +148,7 @@ def get_user(
 def update_user(
     user_id: UUID,
     data:    UserUpdate,
-    request: Request,  # ← ADD
+    request: Request,
     db:      Session = Depends(get_db),
     current: User    = Depends(require_admin),
 ):
@@ -145,7 +156,6 @@ def update_user(
     if not user:
         raise HTTPException(status_code=404, detail="Usuário não encontrado.")
 
-    # ← ADD: captura estado antes da alteração
     before = {"name": user.name, "email": user.email, "role": user.role, "is_active": user.is_active, "plan": user.plan}
     role_before = user.role
 
@@ -158,7 +168,6 @@ def update_user(
     if data.role       is not None: user.role      = data.role
     if data.is_active  is not None: user.is_active = data.is_active
 
-    # Atualiza plano / módulos
     new_plan    = data.plan            if data.plan            is not None else user.plan
     new_modules = data.allowed_modules if data.allowed_modules is not None else None
 
@@ -169,7 +178,6 @@ def update_user(
     db.commit()
     db.refresh(user)
 
-    # ← ADD: registra a edição geral
     log_event(
         db=db,
         event_type="user.updated",
@@ -182,7 +190,6 @@ def update_user(
         request=request,
     )
 
-    # ← ADD: se o role mudou, gera um evento específico (é o mais sensível para auditoria de segurança)
     if data.role is not None and data.role != role_before:
         log_event(
             db=db,
@@ -204,7 +211,7 @@ def update_user(
 @router.patch("/users/{user_id}/toggle-active", response_model=UserOut)
 def toggle_active(
     user_id: UUID,
-    request: Request,  # ← ADD
+    request: Request,
     db:      Session = Depends(get_db),
     current: User    = Depends(require_admin),
 ):
@@ -219,7 +226,6 @@ def toggle_active(
     db.commit()
     db.refresh(user)
 
-    # ← ADD: registra ativação ou desativação (eventos diferentes, mais fácil de filtrar depois)
     log_event(
         db=db,
         event_type="user.deactivated" if was_active else "user.reactivated",
@@ -241,9 +247,9 @@ def toggle_active(
 def reset_password(
     user_id: UUID,
     data:    UserResetPassword,
-    request: Request,  # ← ADD
+    request: Request,
     db:      Session = Depends(get_db),
-    current: User = Depends(require_admin),  # ← renomeado de "_" para "current" para usar no log
+    current: User = Depends(require_admin),
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -254,7 +260,6 @@ def reset_password(
     db.commit()
     db.refresh(user)
 
-    # ← ADD: registra reset de senha feito por admin (NUNCA logar a senha em si, só o evento)
     log_event(
         db=db,
         event_type="user.password_changed",
@@ -294,3 +299,174 @@ def get_user_history(
         .all()
     )
     return history
+
+
+# ══════════════════════════════════════════════════════════
+# ← ADD: NOVO BLOCO — RBAC granular para TI/segurança do cliente
+# Esses endpoints usam require_security_admin, NÃO require_admin.
+# Ou seja: um "admin" de negócio comum não acessa isso por padrão,
+# só quem tiver a flag is_security_admin concedida explicitamente.
+# ══════════════════════════════════════════════════════════
+
+# ── Conceder / revogar acesso de segurança (só admin de negócio pode) ──
+
+@router.patch("/users/{user_id}/security-admin", response_model=UserOut)
+def toggle_security_admin(
+    user_id: UUID,
+    request: Request,
+    db:      Session = Depends(get_db),
+    current: User    = Depends(require_admin),  # decisão de negócio: só admin concede
+):
+    """Concede ou revoga acesso ao painel de debug/logs técnicos para um usuário."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    was_security_admin = user.is_security_admin
+    user.is_security_admin = not user.is_security_admin
+    db.commit()
+    db.refresh(user)
+
+    log_event(
+        db=db,
+        event_type="user.security_admin_granted" if user.is_security_admin else "user.security_admin_revoked",
+        actor_id=current.id,
+        actor_role=current.role,
+        entity_type="user",
+        entity_id=user.id,
+        payload_before={"is_security_admin": was_security_admin},
+        payload_after={"is_security_admin": user.is_security_admin},
+        request=request,
+    )
+
+    return user
+
+
+# ── Listar entradas do audit_log (só TI/segurança) ────────
+
+@router.get("/audit-log")
+def list_audit_log(
+    request: Request,
+    event_type: Optional[str] = Query(None, description="Filtrar por tipo de evento, ex: user.login"),
+    actor_id:   Optional[UUID] = Query(None, description="Filtrar por quem realizou a ação"),
+    entity_type: Optional[str] = Query(None, description="Filtrar por tipo de entidade afetada"),
+    skip:  int = Query(0,   ge=0),
+    limit: int = Query(50,  le=500),
+    db:    Session = Depends(get_db),
+    current: User = Depends(require_security_admin),
+):
+    """
+    Lista entradas do audit_log para o time de TI/segurança do cliente auditar.
+    Requer is_security_admin=True — não é o mesmo que ser admin de negócio.
+    """
+    q = db.query(AuditLog)
+    if event_type:
+        q = q.filter(AuditLog.event_type == event_type)
+    if actor_id:
+        q = q.filter(AuditLog.actor_id == actor_id)
+    if entity_type:
+        q = q.filter(AuditLog.entity_type == entity_type)
+
+    total = q.count()
+    records = q.order_by(AuditLog.created_at.desc()).offset(skip).limit(limit).all()
+
+    # ← Acesso ao próprio painel de auditoria também vira log — auditoria de quem audita
+    log_event(
+        db=db,
+        event_type="admin.audit_log_viewed",
+        actor_id=current.id,
+        actor_role=current.role,
+        entity_type="audit_log",
+        metadata={"filters": {"event_type": event_type, "entity_type": entity_type}, "result_count": len(records)},
+        request=request,
+    )
+
+    return {
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+        "results": [
+            {
+                "id": r.id,
+                "event_type": r.event_type,
+                "entity_type": r.entity_type,
+                "entity_id": str(r.entity_id) if r.entity_id else None,
+                "actor_id": str(r.actor_id),
+                "actor_role": r.actor_role,
+                "payload_before": r.payload_before,
+                "payload_after": r.payload_after,
+                "ip_origin": str(r.ip_origin) if r.ip_origin else None,
+                "user_agent": r.user_agent,
+                "metadata": r.audit_metadata,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in records
+        ],
+    }
+
+
+# ── Estatísticas rápidas do audit_log (dashboard do painel de TI) ──
+
+@router.get("/audit-log/stats")
+def audit_log_stats(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_security_admin),
+):
+    """Contagem de eventos por tipo, para montar um resumo visual no painel de TI."""
+    rows = (
+        db.query(AuditLog.event_type, sa_func.count(AuditLog.id))
+        .group_by(AuditLog.event_type)
+        .order_by(sa_func.count(AuditLog.id).desc())
+        .all()
+    )
+    return {"event_counts": {event_type: count for event_type, count in rows}}
+
+
+# ── Painel de debug/info do sistema (só TI/segurança) ─────
+
+@router.get("/debug-info")
+def debug_info(
+    request: Request,
+    db: Session = Depends(get_db),
+    current: User = Depends(require_security_admin),
+):
+    """
+    Informações técnicas do backend para o time de TI do cliente inspecionar:
+    versão do Python, status da conexão com o banco, feature flags ativas.
+    NUNCA expõe segredos (chaves, senhas) — só booleanos indicando se estão configurados.
+    """
+    db_ok = True
+    db_error = None
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception as e:
+        db_ok = False
+        db_error = str(e)
+
+    info = {
+        "app": "Privyon API",
+        "python_version": sys.version,
+        "platform": platform.platform(),
+        "server_time_utc": datetime.now(timezone.utc).isoformat(),
+        "database": {
+            "connected": db_ok,
+            "error": db_error,
+        },
+        "feature_flags": {
+            "groq_ai_enabled": bool(settings.GROQ_API_KEY),
+            "captcha_enabled": bool(getattr(settings, "TURNSTILE_SECRET_KEY", None)),
+        },
+    }
+
+    # ← Acesso ao modo debug é sempre logado — item que a Alpargatas pediu explicitamente
+    log_event(
+        db=db,
+        event_type="admin.debug_accessed",
+        actor_id=current.id,
+        actor_role=current.role,
+        entity_type="system",
+        metadata={"endpoint": "/admin/debug-info"},
+        request=request,
+    )
+
+    return info

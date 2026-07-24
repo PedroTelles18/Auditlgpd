@@ -67,3 +67,15 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Acesso restrito a administradores")
     return current_user
+
+
+# ← ADD: dependency separada para o painel de debug/logs técnicos.
+# Não usa o "role" de negócio — usa a flag is_security_admin, pensada
+# especificamente para o time de TI/segurança do cliente.
+def require_security_admin(current_user: User = Depends(get_current_user)) -> User:
+    if not current_user.is_security_admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Acesso restrito à equipe de segurança/TI autorizada",
+        )
+    return current_user
