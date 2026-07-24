@@ -3,6 +3,12 @@ export interface LoginFormData {
   password: string;
 }
 
+// ← ADD: formato salvo/retornado pelo backend em theme_preferences
+export interface ThemePreferences {
+  accent?: "blue" | "cyan" | "violet" | "emerald" | "amber" | "rose";
+  mode?: "light" | "dark";
+}
+
 export interface AuthResponse {
   access_token: string;
   token_type: string;
@@ -11,6 +17,7 @@ export interface AuthResponse {
     email: string;
     name: string;
     role: "admin" | "auditor" | "viewer";
+    theme_preferences?: ThemePreferences; // ← ADD
   };
 }
 
@@ -19,4 +26,5 @@ export interface User {
   email: string;
   name: string;
   role: "admin" | "auditor" | "viewer";
+  theme_preferences?: ThemePreferences; // ← ADD
 }
