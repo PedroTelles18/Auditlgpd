@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, CheckCircle2, Eye, EyeOff, Bell, Key, Zap, Moon, Shield, Trash2, FileText, Globe, Download } from "lucide-react";
+import { Save, CheckCircle2, Eye, EyeOff, Bell, Key, Zap, Moon, Shield, Trash2, FileText, Globe, Download, Check } from "lucide-react";
 import { Topbar, Card, BtnPrimary } from "@/components/ui";
 import { useLang, Lang } from "@/context/LanguageContext";
-import { useTheme } from "@/context/ThemeContext";
+import { useTheme, ACCENT_LABELS, ACCENT_SWATCH_HEX, type AccentColor } from "@/context/ThemeContext";
 import Cookies from "js-cookie";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -26,6 +26,33 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
       <div className="absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all"
         style={{ left: on ? "calc(100% - 18px)" : "2px", boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
     </button>
+  );
+}
+
+// ← ADD: paleta de cores de destaque, usada dentro da seção Aparência
+function AccentSwatches() {
+  const { accent, setAccent, saving } = useTheme();
+  return (
+    <div className="flex items-center gap-2.5">
+      {(Object.keys(ACCENT_SWATCH_HEX) as AccentColor[]).map((color) => (
+        <button
+          key={color}
+          type="button"
+          disabled={saving}
+          onClick={() => setAccent(color)}
+          title={ACCENT_LABELS[color]}
+          className="relative w-7 h-7 rounded-full transition-transform hover:scale-110 disabled:opacity-60"
+          style={{
+            background: ACCENT_SWATCH_HEX[color],
+            boxShadow: accent === color ? `0 0 0 2px var(--card-bg), 0 0 0 4px ${ACCENT_SWATCH_HEX[color]}` : "none",
+          }}
+        >
+          {accent === color && (
+            <Check size={12} className="absolute inset-0 m-auto" color="#fff" strokeWidth={3} />
+          )}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -250,6 +277,10 @@ export default function SettingsPage() {
           <Section icon={Moon} iconColor="var(--text-2)" title={t.appearance}>
             <Row label="Modo escuro" desc="Ativa o tema escuro em todo o sistema instantaneamente">
               <Toggle on={dark} onChange={() => toggleDark()} />
+            </Row>
+            {/* ← ADD: seletor de cor de destaque, salvo por usuário no backend */}
+            <Row label="Cor de destaque" desc="Personalize a cor principal da sua interface">
+              <AccentSwatches />
             </Row>
             <Row label={t.compact_mode} desc="Reduzir espaçamento para mais conteúdo visível (aplicado imediatamente)">
               <Toggle on={prefs.compactMode} onChange={v => set("compactMode", v)} />

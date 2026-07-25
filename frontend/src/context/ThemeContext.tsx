@@ -45,18 +45,30 @@ export const ACCENT_LABELS: Record<AccentColor, string> = {
   emerald: "Esmeralda", amber: "Âmbar", rose: "Rosa",
 };
 
+export const ACCENT_SWATCH_HEX: Record<AccentColor, string> = {
+  blue: "#2563eb", cyan: "#0891b2", violet: "#7c3aed",
+  emerald: "#059669", amber: "#d97706", rose: "#e11d48",
+};
+
 interface ThemeContextType {
+  // ── API já existente no projeto (mantida por compatibilidade) ──
+  dark: boolean;
+  toggle: () => void;
+
+  // ── API nova: cor de destaque customizável ──
   accent: AccentColor;
-  mode: ThemeMode;
   setAccent: (color: AccentColor) => Promise<void>;
+  mode: ThemeMode;
   setMode: (mode: ThemeMode) => Promise<void>;
   saving: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
+  dark: true,
+  toggle: () => {},
   accent: "blue",
-  mode: "dark",
   setAccent: async () => {},
+  mode: "dark",
   setMode: async () => {},
   saving: false,
 });
@@ -64,18 +76,16 @@ const ThemeContext = createContext<ThemeContextType>({
 function applyTheme(accent: AccentColor, mode: ThemeMode) {
   const root = document.documentElement;
 
-  // Aplica claro/escuro reaproveitando a classe que o globals.css já usa
   if (mode === "dark") root.classList.add("dark");
   else root.classList.remove("dark");
 
-  // Sobrescreve os tokens de cor via inline style (tem prioridade sobre o CSS)
   const palette = ACCENT_PALETTE[accent]?.[mode] ?? ACCENT_PALETTE.blue[mode];
   Object.entries(palette).forEach(([token, value]) => {
     root.style.setProperty(`--${token}`, value);
   });
 
-  // ← Mantém o localStorage sincronizado — é o que o script anti-flash
-  // no layout.tsx lê antes do React montar, evitando piscar tema errado
+  // Mantém o localStorage sincronizado — é o que o script anti-flash
+  // no layout.tsx lê antes do React montar
   try {
     const existing = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}");
     localStorage.setItem(
@@ -83,7 +93,7 @@ function applyTheme(accent: AccentColor, mode: ThemeMode) {
       JSON.stringify({ ...existing, darkMode: mode === "dark", accent })
     );
   } catch {
-    // localStorage indisponível (modo privado, etc.) — não é crítico, ignora
+    // localStorage indisponível — não é crítico
   }
 }
 
@@ -93,7 +103,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>("dark");
   const [saving, setSaving] = useState(false);
 
-  // Quando o usuário carrega (login/refresh), aplica a preferência salva dele
+  // Ao carregar (login/refresh), aplica a preferência salva no backend
   useEffect(() => {
     if (!user) return;
     const prefs = user.theme_preferences;
@@ -103,18 +113,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setModeState(savedMode);
     applyTheme(savedAccent, savedMode);
   }, [user]);
-
-  const setAccent = useCallback(async (color: AccentColor) => {
-    setSaving(true);
-    setAccentState(color);
-    applyTheme(color, mode);
-    try {
-      await api.patch("/auth/me/theme", { accent: color });
-      await refresh();
-    } finally {
-      setSaving(false);
-    }
-  }, [mode, refresh]);
 
   const setMode = useCallback(async (newMode: ThemeMode) => {
     setSaving(true);
@@ -128,8 +126,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [accent, refresh]);
 
+  const setAccent = useCallback(async (color: AccentColor) => {
+    setSaving(true);
+    setAccentState(color);
+    applyTheme(color, mode);
+    try {
+      await api.patch("/auth/me/theme", { accent: color });
+      await refresh();
+    } finally {
+      setSaving(false);
+    }
+  }, [mode, refresh]);
+
+  // ← Wrapper de compatibilidade: mantém o toggle() simples que já era usado
+  const toggle = useCallback(() => {
+    setMode(mode === "dark" ? "light" : "dark");
+  }, [mode, setMode]);
+
   return (
-    <ThemeContext.Provider value={{ accent, mode, setAccent, setMode, saving }}>
+    <ThemeContext.Provider
+      value={{ dark: mode === "dark", toggle, accent, setAccent, mode, setMode, saving }}
+    >
       {children}
     </ThemeContext.Provider>
   );
