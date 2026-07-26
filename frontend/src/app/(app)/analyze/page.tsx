@@ -17,6 +17,14 @@ interface CachedResult {
   findings: Finding[]; filenames: string[]; savedAt: string; score: number; historyId?: string;
 }
 
+// ← ADD: preferências lidas da página de configurações
+interface AnalyzePrefs {
+  scanOnUpload: boolean;
+  autoReport: boolean;
+  showLineNumbers: boolean;
+}
+const DEFAULT_PREFS: AnalyzePrefs = { scanOnUpload: true, autoReport: false, showLineNumbers: true };
+
 const SEV: Record<string, "red"|"amber"|"blue"|"green"> = {
   critical:"red", high:"amber", medium:"blue", low:"green",
 };
@@ -43,6 +51,25 @@ async function saveToHistory(findings: Finding[], filenames: string[], token: st
   return { id: null, score };
 }
 
+// ← ADD: baixa o PDF automaticamente, reaproveitando a mesma lógica da página de Relatórios
+async function autoDownloadPdf(historyId: string, token: string) {
+  try {
+    const res = await fetch(`${API_URL}/history/${historyId}/pdf`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `privyon-analise-${new Date().toISOString().split("T")[0]}.pdf`;
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    // Falha silenciosa — não deve travar o fluxo principal de análise
+  }
+}
+
 export default function AnalyzePage() {
   const { t } = useLang();
   const [files,    setFiles]    = useState<File[]>([]);
@@ -54,7 +81,9 @@ export default function AnalyzePage() {
   const [filter,   setFilter]   = useState("all");
   const [dragging, setDragging] = useState(false);
   const [score,    setScore]    = useState(0);
+  const [prefs,    setPrefs]    = useState<AnalyzePrefs>(DEFAULT_PREFS); // ← ADD
   const inputRef = useRef<HTMLInputElement>(null);
+  const autoTriggeredRef = useRef(false); // ← ADD: evita disparar análise automática mais de uma vez
 
   // Load cached results on mount
   useEffect(() => {
@@ -67,6 +96,18 @@ export default function AnalyzePage() {
         setScore(c.score);
         setSaved(!!c.historyId);
       }
+    } catch {}
+  }, []);
+
+  // ← ADD: carrega as preferências salvas em Configurações
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("privyon_prefs") || "{}");
+      setPrefs(p => ({
+        scanOnUpload: stored.scanOnUpload ?? p.scanOnUpload,
+        autoReport: stored.autoReport ?? p.autoReport,
+        showLineNumbers: stored.showLineNumbers ?? p.showLineNumbers,
+      }));
     } catch {}
   }, []);
 
@@ -84,10 +125,17 @@ export default function AnalyzePage() {
       files.forEach(f => fd.append("files", f));
       const filenames = files.map(f => f.name);
 
+      // ← ADD: envia a chave Groq pessoal, se configurada.
+      // OBS: o backend ainda precisa ser ajustado para usar esse header
+      // em vez da GROQ_API_KEY do servidor — isso é um próximo passo.
+      const groqKey = localStorage.getItem("privyon_groq_key");
+      const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+      if (groqKey) headers["X-Groq-Key"] = groqKey;
+
       let findings: Finding[] = [];
       try {
         const res = await fetch(`${API_URL}/analyze/code`, {
-          method:"POST", headers:{ Authorization:`Bearer ${token}` }, body:fd,
+          method:"POST", headers, body:fd,
         });
         if (res.ok) {
           const data = await res.json();
@@ -128,12 +176,28 @@ export default function AnalyzePage() {
           last_audit: new Date().toISOString(),
         }));
       } catch {}
+
+      // ← ADD: gera e baixa o PDF automaticamente, se a preferência estiver ativa
+      if (prefs.autoReport && historyId && token) {
+        await autoDownloadPdf(historyId, token);
+      }
     } finally { setLoading2(false); }
   }
+
+  // ← ADD: dispara a análise automaticamente ao soltar/selecionar arquivos,
+  // se a preferência "Iniciar análise ao enviar" estiver ativa
+  useEffect(() => {
+    if (prefs.scanOnUpload && files.length > 0 && !results && !loading2 && !autoTriggeredRef.current) {
+      autoTriggeredRef.current = true;
+      analyze();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, prefs.scanOnUpload]);
 
   function clearResults() {
     setResults(null); setCached(null); setFiles([]); setSaved(false);
     sessionStorage.removeItem(CACHE_KEY);
+    autoTriggeredRef.current = false; // ← ADD: permite nova análise automática na próxima leva de arquivos
   }
 
   const toggle = (id: string) => setExpanded(p => ({ ...p, [id]: !p[id] }));
@@ -199,7 +263,10 @@ export default function AnalyzePage() {
                 onChange={e=>addFiles(e.target.files)} />
               <div className="text-4xl mb-3">📂</div>
               <h3 className="text-[15px] font-bold mb-1.5" style={{ color:"var(--text)" }}>{t.drop_files}</h3>
-              <p className="text-[12px] mb-4" style={{ color:"var(--text-3)" }}>Suporte para .py · .js · .ts · Até 10 arquivos</p>
+              <p className="text-[12px] mb-4" style={{ color:"var(--text-3)" }}>
+                Suporte para .py · .js · .ts · Até 10 arquivos
+                {prefs.scanOnUpload && <span style={{ color:"var(--accent)" }}> · análise inicia automaticamente</span>}
+              </p>
               <button className="px-5 py-2.5 rounded-lg text-[13px] font-bold text-white"
                 style={{ background:"var(--accent)" }}
                 onClick={e=>{e.stopPropagation();inputRef.current?.click();}}>
@@ -268,7 +335,10 @@ export default function AnalyzePage() {
                       <Badge variant={SEV[f.severity]||"slate"}>{f.severity.toUpperCase()}</Badge>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-bold truncate" style={{ color:"var(--text)" }}>{f.description}</p>
-                        <p className="text-[10px] font-mono" style={{ color:"var(--text-3)" }}>{f.filename} · linha {f.line}</p>
+                        {/* ← FIX: número da linha agora respeita a preferência showLineNumbers */}
+                        <p className="text-[10px] font-mono" style={{ color:"var(--text-3)" }}>
+                          {f.filename}{prefs.showLineNumbers && <> · linha {f.line}</>}
+                        </p>
                       </div>
                       <code className="text-[10px] px-2 py-1 rounded flex-shrink-0"
                         style={{ background:"var(--bg3)", color:"var(--accent)" }}>{f.rule_id}</code>

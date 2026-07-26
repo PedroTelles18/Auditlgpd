@@ -6,7 +6,7 @@ GET  /history/{id}/pdf  — gera PDF de uma auditoria salva
 DELETE /history/{id}    — remove uma auditoria
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -37,16 +37,19 @@ class SaveAuditRequest(BaseModel):
 
 @router.get("/")
 async def list_history(
+    limit: Optional[int] = Query(None, ge=1, le=1000, description="Limite de itens retornados"),  # ← ADD
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Lista todas as auditorias do usuário logado, mais recentes primeiro."""
-    records = (
+    """Lista as auditorias do usuário logado, mais recentes primeiro. Opcionalmente limitada por 'limit'."""
+    query = (
         db.query(AuditHistory)
         .filter(AuditHistory.user_id == current_user.id)
         .order_by(AuditHistory.created_at.desc())
-        .all()
     )
+    if limit is not None:
+        query = query.limit(limit)
+    records = query.all()
     return [
         {
             "id": str(r.id),

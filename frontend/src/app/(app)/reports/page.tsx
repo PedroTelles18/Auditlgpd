@@ -19,6 +19,19 @@ interface Report {
   score: number;
 }
 
+// ← ADD: lê a preferência de limite salva em Configurações
+function getMaxHistoryLimit(): number | null {
+  try {
+    const stored = JSON.parse(localStorage.getItem("privyon_prefs") || "{}");
+    const val = stored.maxHistoryItems as string | undefined;
+    if (!val || val === "ilimitado") return null;
+    const n = parseInt(val, 10);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function ReportsPage() {
   const { t } = useLang();
   const [reports, setReports] = useState<Report[]>([]);
@@ -30,7 +43,10 @@ export default function ReportsPage() {
 
   const fetchReports = () => {
     setLoadingR(true);
-    fetch(`${API_URL}/history/`, {
+    // ← FIX: agora envia o limite configurado pelo usuário (antes ignorava a preferência)
+    const limit = getMaxHistoryLimit();
+    const url = limit ? `${API_URL}/history/?limit=${limit}` : `${API_URL}/history/`;
+    fetch(url, {
       headers: { Authorization: `Bearer ${token()}` },
     })
       .then((r) => (r.ok ? r.json() : []))

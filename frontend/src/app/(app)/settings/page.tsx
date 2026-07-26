@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, CheckCircle2, Eye, EyeOff, Bell, Key, Zap, Moon, Shield, Trash2, FileText, Globe, Download, Check } from "lucide-react";
+import { Save, CheckCircle2, Eye, EyeOff, Bell, Key, Zap, Moon, Shield, Trash2, FileText, Globe, Download, Check, Lock } from "lucide-react";
 import { Topbar, Card, BtnPrimary } from "@/components/ui";
 import { useLang, Lang } from "@/context/LanguageContext";
 import { useTheme, ACCENT_LABELS, ACCENT_SWATCH_HEX, type AccentColor } from "@/context/ThemeContext";
@@ -15,8 +15,17 @@ const LANGS: { code: Lang; label: string; flag: string }[] = [
   { code: "es",    label: "Español",             flag: "🇪🇸" },
 ];
 
-const INTERVALS = ["realtime","hourly","daily","weekly"] as const;
 const MAX_HISTORY = ["10","25","50","100","ilimitado"] as const;
+
+// ══════════════════════════════════════════════════════════
+// ← FIX: Toggle, Row, Section e Select agora são declarados FORA
+// do componente SettingsPage. Antes, ficavam declarados dentro da
+// função do componente — isso fazia o React recriar esses componentes
+// a cada clique (nova referência de função a cada render), forçando
+// desmontagem + remontagem de toda a árvore, o que resetava o scroll
+// da página para o topo a cada interação. Declarar fora resolve isso
+// e também deixa a página mais rápida.
+// ══════════════════════════════════════════════════════════
 
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -29,7 +38,54 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   );
 }
 
-// ← ADD: paleta de cores de destaque, usada dentro da seção Aparência
+function Row({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) {
+  return (
+    // ← FIX: py-4 fixo virou var(--row-py), que reage ao modo compacto de verdade agora
+    <div className="flex items-center justify-between px-5 gap-4" style={{ borderBottom: "1px solid #f1f5f9", paddingTop: "var(--row-py)", paddingBottom: "var(--row-py)" }}>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold" style={{ color: "var(--text)" }}>{label}</p>
+        {desc && <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>{desc}</p>}
+      </div>
+      <div className="flex-shrink-0">{children}</div>
+    </div>
+  );
+}
+
+function Section({ icon: Icon, iconColor, title, children }: {
+  icon: React.ElementType; iconColor: string; title: string; children: React.ReactNode;
+}) {
+  return (
+    <Card className="overflow-hidden mb-3">
+      <div className="flex items-center gap-2.5 px-5 py-3.5" style={{ borderBottom: "1px solid #e2e8f4", background: "var(--section-bg)" }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ background: `${iconColor}18` }}>
+          <Icon size={13} style={{ color: iconColor }} />
+        </div>
+        <h2 className="text-[12px] font-extrabold uppercase tracking-wider" style={{ color: "var(--text)" }}>{title}</h2>
+      </div>
+      <div>{children}</div>
+    </Card>
+  );
+}
+
+function Select({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+  return (
+    <select value={value} onChange={e => onChange(e.target.value)}
+      className="text-[12px] font-semibold px-2.5 py-1.5 rounded-lg outline-none transition-all"
+      style={{ border: "1.5px solid #e2e8f4", background: "var(--bg2)", color: "var(--text)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      {options.map(({ value: v, label }) => <option key={v} value={v}>{label}</option>)}
+    </select>
+  );
+}
+
+function ComingSoonBadge() {
+  return (
+    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold"
+      style={{ background: "var(--bg3)", color: "var(--text-3)" }}>
+      Em breve
+    </span>
+  );
+}
 function AccentSwatches() {
   const { accent, setAccent, saving } = useTheme();
   return (
@@ -66,7 +122,7 @@ export default function SettingsPage() {
 
   const [prefs, setPrefs] = useState({
     emailAlerts: true, criticalOnly: false, autoReport: false, alertInterval: "realtime",
-    groqKey: "", scanOnUpload: true, reportLogo: true, autoSaveHistory: true,
+    groqKey: "", scanOnUpload: true, reportLogo: true,
     showLineNumbers: true, maxHistoryItems: "50", compactMode: false,
     anonymizeLogs: false, shareMetrics: false,
   });
@@ -137,39 +193,6 @@ export default function SettingsPage() {
     }
   }
 
-  const Row = ({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) => (
-    <div className="flex items-center justify-between px-5 py-4 gap-4" style={{ borderBottom: "1px solid #f1f5f9" }}>
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold" style={{ color: "var(--text)" }}>{label}</p>
-        {desc && <p className="text-[11px] mt-0.5" style={{ color: "var(--text-3)" }}>{desc}</p>}
-      </div>
-      <div className="flex-shrink-0">{children}</div>
-    </div>
-  );
-
-  const Section = ({ icon: Icon, iconColor, title, children }: {
-    icon: React.ElementType; iconColor: string; title: string; children: React.ReactNode;
-  }) => (
-    <Card className="overflow-hidden mb-3">
-      <div className="flex items-center gap-2.5 px-5 py-3.5" style={{ borderBottom: "1px solid #e2e8f4", background: "var(--section-bg)" }}>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: `${iconColor}18` }}>
-          <Icon size={13} style={{ color: iconColor }} />
-        </div>
-        <h2 className="text-[12px] font-extrabold uppercase tracking-wider" style={{ color: "var(--text)" }}>{title}</h2>
-      </div>
-      <div>{children}</div>
-    </Card>
-  );
-
-  const Select = ({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) => (
-    <select value={value} onChange={e => onChange(e.target.value)}
-      className="text-[12px] font-semibold px-2.5 py-1.5 rounded-lg outline-none transition-all"
-      style={{ border: "1.5px solid #e2e8f4", background: "var(--bg2)", color: "var(--text)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      {options.map(({ value: v, label }) => <option key={v} value={v}>{label}</option>)}
-    </select>
-  );
-
   return (
     <div className="flex-1 flex flex-col min-w-0">
       <Topbar breadcrumb={t.settings_title}>
@@ -200,7 +223,7 @@ export default function SettingsPage() {
               </p>
               <div className="flex gap-2 flex-wrap">
                 {LANGS.map(({ code, label, flag }) => (
-                  <button key={code} onClick={() => setLang(code)}
+                  <button key={code} type="button" onClick={() => setLang(code)}
                     className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-semibold text-[13px] transition-all"
                     style={{
                       border: lang === code ? "2px solid #2563eb" : "1.5px solid #e2e8f4",
@@ -222,31 +245,30 @@ export default function SettingsPage() {
 
           {/* ── NOTIFICAÇÕES ── */}
           <Section icon={Bell} iconColor="var(--accent)" title={t.notifications}>
-            <Row label={t.email_alerts} desc="Receber alertas de violações detectadas (requer configuração no backend)">
-              <Toggle on={prefs.emailAlerts} onChange={v => set("emailAlerts", v)} />
+            <Row label={t.email_alerts} desc="Alertas por e-mail — em desenvolvimento">
+              <ComingSoonBadge />
             </Row>
-            <Row label={t.critical_only} desc="Notificar somente severidade crítica">
-              <Toggle on={prefs.criticalOnly} onChange={v => set("criticalOnly", v)} />
+            <Row label={t.critical_only} desc="Notificar somente severidade crítica — em desenvolvimento">
+              <ComingSoonBadge />
             </Row>
             <Row label={t.auto_report} desc="Gerar PDF automaticamente após cada auditoria">
               <Toggle on={prefs.autoReport} onChange={v => set("autoReport", v)} />
             </Row>
-            <Row label={t.alert_freq} desc="Com qual frequência receber notificações">
-              <Select value={prefs.alertInterval} onChange={v => set("alertInterval", v)}
-                options={INTERVALS.map(v => ({ value: v, label: t[v as keyof typeof t] as string }))} />
+            <Row label={t.alert_freq} desc="Frequência de notificações — em desenvolvimento">
+              <ComingSoonBadge />
             </Row>
           </Section>
 
           {/* ── INTEGRAÇÕES ── */}
           <Section icon={Key} iconColor="#7c3aed" title={t.integrations}>
-            <Row label={t.groq_key} desc="Chave pessoal para análise com IA. Salva localmente, nunca enviada a terceiros.">
+            <Row label={t.groq_key} desc="Chave pessoal para análise com IA. Enviada ao servidor a cada análise (recurso em finalização).">
               <div className="flex items-center gap-2">
                 <input type={showKey ? "text" : "password"} value={prefs.groqKey}
                   onChange={e => set("groqKey", e.target.value)}
                   placeholder="gsk_..."
                   className="w-32 text-[12px] px-2.5 py-1.5 rounded-lg outline-none"
                   style={{ border: "1.5px solid #e2e8f4", background: "var(--bg2)", color: "var(--text)", fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
-                <button onClick={() => setShowKey(!showKey)} style={{ color: "var(--text-3)" }}>
+                <button type="button" onClick={() => setShowKey(!showKey)} style={{ color: "var(--text-3)" }}>
                   {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>
               </div>
@@ -258,16 +280,22 @@ export default function SettingsPage() {
             <Row label={t.scan_upload} desc="Iniciar análise ao enviar arquivos (lido pela página de análise)">
               <Toggle on={prefs.scanOnUpload} onChange={v => set("scanOnUpload", v)} />
             </Row>
-            <Row label={t.report_logo} desc="Incluir logo Privyon no PDF gerado">
-              <Toggle on={prefs.reportLogo} onChange={v => set("reportLogo", v)} />
+            <Row label={t.report_logo} desc="Incluir logo Privyon no PDF — em desenvolvimento">
+              <ComingSoonBadge />
             </Row>
-            <Row label={t.save_history} desc="Registrar auditorias no Supabase">
-              <Toggle on={prefs.autoSaveHistory} onChange={v => set("autoSaveHistory", v)} />
+            {/* ← FIX: antes era um toggle que não fazia nada (o backend sempre salva,
+                independente dessa preferência). Trocado por indicador fixo — mais
+                transparente, e reforça o argumento de rastreabilidade/compliance. */}
+            <Row label={t.save_history} desc="Toda auditoria é registrada permanentemente — não pode ser desativado (requisito de conformidade)">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold"
+                style={{ background: "var(--success-l)", color: "#15803d" }}>
+                <Lock size={10} /> Sempre ativo
+              </span>
             </Row>
             <Row label={t.show_lines} desc="Mostrar linha do código com a violação">
               <Toggle on={prefs.showLineNumbers} onChange={v => set("showLineNumbers", v)} />
             </Row>
-            <Row label={t.max_history} desc="Quantidade de auditorias salvas e exportadas">
+            <Row label={t.max_history} desc="Quantidade de auditorias exibidas e exportadas">
               <Select value={prefs.maxHistoryItems} onChange={v => set("maxHistoryItems", v)}
                 options={MAX_HISTORY.map(v => ({ value: v, label: v }))} />
             </Row>
@@ -278,29 +306,28 @@ export default function SettingsPage() {
             <Row label="Modo escuro" desc="Ativa o tema escuro em todo o sistema instantaneamente">
               <Toggle on={dark} onChange={() => toggleDark()} />
             </Row>
-            {/* ← ADD: seletor de cor de destaque, salvo por usuário no backend */}
             <Row label="Cor de destaque" desc="Personalize a cor principal da sua interface">
               <AccentSwatches />
             </Row>
-            <Row label={t.compact_mode} desc="Reduzir espaçamento para mais conteúdo visível (aplicado imediatamente)">
+            <Row label={t.compact_mode} desc="Reduz o espaçamento das linhas para mais conteúdo visível">
               <Toggle on={prefs.compactMode} onChange={v => set("compactMode", v)} />
             </Row>
           </Section>
 
           {/* ── PRIVACIDADE ── */}
           <Section icon={Shield} iconColor="var(--success)" title={t.privacy}>
-            <Row label={t.anonymize} desc="Mascarar dados sensíveis nos logs de auditoria">
-              <Toggle on={prefs.anonymizeLogs} onChange={v => set("anonymizeLogs", v)} />
+            <Row label={t.anonymize} desc="Mascarar dados sensíveis nos logs — em desenvolvimento">
+              <ComingSoonBadge />
             </Row>
-            <Row label={t.share_metrics} desc="Ajudar a melhorar o Privyon (dados anônimos)">
-              <Toggle on={prefs.shareMetrics} onChange={v => set("shareMetrics", v)} />
+            <Row label={t.share_metrics} desc="Ajudar a melhorar o Privyon — em desenvolvimento">
+              <ComingSoonBadge />
             </Row>
           </Section>
 
           {/* ── DADOS ── */}
           <Section icon={Trash2} iconColor="var(--danger)" title={t.data}>
             <Row label={t.clear_history} desc="Remove cache local de auditorias do navegador">
-              <button onClick={clearHistory}
+              <button type="button" onClick={clearHistory}
                 className="px-3.5 py-1.5 rounded-lg text-[12px] font-bold transition-all"
                 style={{
                   background: cleared ? "var(--success-l)" : "var(--card-bg)",
@@ -311,7 +338,7 @@ export default function SettingsPage() {
               </button>
             </Row>
             <Row label={t.export_data} desc={`Baixar suas últimas ${prefs.maxHistoryItems} auditorias em JSON`}>
-              <button onClick={exportData} disabled={exporting}
+              <button type="button" onClick={exportData} disabled={exporting}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12px] font-bold transition-colors disabled:opacity-60"
                 style={{ border: "1.5px solid #e2e8f4", background: "var(--card-bg)", color: "var(--text-2)" }}>
                 {exporting
