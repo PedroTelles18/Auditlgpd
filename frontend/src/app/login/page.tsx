@@ -182,7 +182,7 @@ export default function LoginPage() {
             </div>
 
             <div className="flex justify-end mb-4">
-              <button type="button" className="text-[12px] font-semibold transition-colors"
+              <button type="button" onClick={() => router.push("/forgot-password")} className="text-[12px] font-semibold transition-colors"
                 style={{ color: "#2563eb" }}>
                 Esqueci minha senha
               </button>

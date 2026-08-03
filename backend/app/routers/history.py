@@ -18,7 +18,8 @@ from app.core.security import get_current_user
 from app.models.audit_history import AuditHistory
 from app.models.user import User
 from app.reports.pdf_generator import generate_code_analysis_pdf, generate_db_audit_pdf
-from app.services.audit import log_event  # ← ADD
+from app.services.audit import log_event
+from app.services.email import send_report_email  # ← ADD
 
 router = APIRouter(prefix="/history", tags=["History"])
 
@@ -170,7 +171,65 @@ async def download_pdf(
         raise HTTPException(status_code=500, detail=f"Erro ao gerar PDF: {str(e)}")
 
 
-@router.delete("/{audit_id}")
+@router.post("/{audit_id}/email")
+async def email_pdf(
+    audit_id: str,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Gera o PDF de uma auditoria salva e envia por e-mail para o próprio usuário logado."""
+    try:
+        record_id = uuid.UUID(audit_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="ID inválido")
+
+    record = db.query(AuditHistory).filter(
+        AuditHistory.id == record_id,
+        AuditHistory.user_id == current_user.id,
+    ).first()
+
+    if not record:
+        raise HTTPException(status_code=404, detail="Auditoria não encontrada")
+
+    if not record.result_data:
+        raise HTTPException(status_code=400, detail="Dados da auditoria não disponíveis para gerar PDF")
+
+    try:
+        if record.audit_type == "code":
+            pdf_bytes = generate_code_analysis_pdf(analysis_data=record.result_data, auditor_name=current_user.name)
+            filename = "privyon-code-audit.pdf"
+        else:
+            pdf_bytes = generate_db_audit_pdf(audit_data=record.result_data, auditor_name=current_user.name)
+            filename = "privyon-db-audit.pdf"
+
+        sent = send_report_email(
+            to_email=current_user.email,
+            user_name=current_user.name,
+            pdf_bytes=pdf_bytes,
+            filename=filename,
+            report_title=record.title,
+        )
+
+        if not sent:
+            raise HTTPException(status_code=502, detail="Não foi possível enviar o e-mail no momento.")
+
+        log_event(
+            db=db,
+            event_type="audit.exported",
+            actor_id=current_user.id,
+            actor_role=current_user.role,
+            entity_type="audit_history",
+            entity_id=record.id,
+            metadata={"format": "pdf", "filename": filename, "via": "email"},
+            request=request,
+        )
+
+        return {"message": f"Relatório enviado para {current_user.email}"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao enviar relatório: {str(e)}")
 async def delete_audit(
     audit_id: str,
     request: Request,  # ← ADD

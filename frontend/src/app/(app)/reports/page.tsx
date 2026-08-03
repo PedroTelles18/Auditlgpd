@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Filter, Trash2, FileText } from "lucide-react";
+import { Download, Filter, Trash2, FileText, Mail, Check } from "lucide-react";
 import { Topbar, Card, BtnPrimary, BtnOutline } from "@/components/ui";
 import { useLang } from "@/context/LanguageContext";
 import Cookies from "js-cookie";
@@ -38,6 +38,8 @@ export default function ReportsPage() {
   const [loadingR, setLoadingR] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [emailing, setEmailing] = useState<string | null>(null);   // ← ADD
+  const [emailSent, setEmailSent] = useState<string | null>(null); // ← ADD
 
   const token = () => Cookies.get("access_token");
 
@@ -56,6 +58,24 @@ export default function ReportsPage() {
   };
 
   useEffect(() => { fetchReports(); }, []);
+
+  // ← ADD: envia o PDF do relatório para o e-mail do usuário logado
+  const emailReport = async (id: string) => {
+    setEmailing(id);
+    try {
+      const res = await fetch(`${API_URL}/history/${id}/email`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token()}` },
+      });
+      if (!res.ok) throw new Error();
+      setEmailSent(id);
+      setTimeout(() => setEmailSent(null), 3000);
+    } catch {
+      alert("Não foi possível enviar o relatório por e-mail. Tente novamente.");
+    } finally {
+      setEmailing(null);
+    }
+  };
 
   const downloadPdf = async (id: string, title: string) => {
     setDownloading(id);
@@ -165,6 +185,24 @@ export default function ReportsPage() {
                 >
                   <Download size={12} />
                   {downloading === id ? "..." : "PDF"}
+                </button>
+                <button
+                  onClick={() => emailReport(id)}
+                  disabled={emailing === id}
+                  title="Enviar por e-mail"
+                  className="p-2 rounded-lg transition-colors flex-shrink-0"
+                  style={{
+                    border: "1px solid #e2e8f4",
+                    background: emailSent === id ? "var(--success-l)" : "var(--card-bg)",
+                    color: emailSent === id ? "var(--success)" : "var(--text-2)",
+                    opacity: emailing === id ? 0.6 : 1,
+                  }}
+                >
+                  {emailing === id
+                    ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin block" />
+                    : emailSent === id
+                    ? <Check size={14} />
+                    : <Mail size={14} />}
                 </button>
                 <button
                   onClick={() => deleteAudit(id)}

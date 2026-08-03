@@ -80,6 +80,17 @@ export function logout() {
   window.location.href = "/login";
 }
 
+// ← ADD: fluxo de redefinição de senha por e-mail
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const res = await api.post<{ message: string }>("/auth/forgot-password", { email });
+  return res.data;
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  const res = await api.post<{ message: string }>("/auth/reset-password", { token, new_password: newPassword });
+  return res.data;
+}
+
 export function getToken(): string | undefined {
   return Cookies.get("access_token");
 }

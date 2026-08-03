@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { LogOut, LayoutDashboard, FileCode2, Database, FileText, Bell, Settings, User, ChevronRight, Activity, ShieldAlert } from "lucide-react";
+import Cookies from "js-cookie";
 import { useAuth } from "@/context/AuthContext";
 import { LanguageProvider, useLang } from "@/context/LanguageContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import OnboardingTour from "@/components/OnboardingTour";
 import PrivyonLogo from "@/components/PrivyonLogo";
 import { DashboardSkeleton } from "@/components/Skeleton";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const DEMO_EMAIL = "demo@privyon.com.br";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -28,6 +32,27 @@ function AppInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [showTour, setShowTour] = useState(false);
 
+  // ← FIX: badge de alertas agora é calculado de verdade, em vez de fixo em "3".
+  // Conta auditorias recentes com score < 70 (mesmo critério de "Necessita atenção"
+  // usado na tela de Relatórios). Para a conta demo, usa o tamanho real do dataset demo.
+  const [alertCount, setAlertCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.email === DEMO_EMAIL) {
+      setAlertCount(3); // ← Reflete o dataset demo real (DEMO_ALERTS tem 3 itens)
+      return;
+    }
+    const token = Cookies.get("access_token");
+    if (!token) { setAlertCount(0); return; }
+    fetch(`${API_URL}/history/?limit=20`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : [])
+      .then((history: { score: number }[]) => {
+        setAlertCount(history.filter(h => h.score < 70).length);
+      })
+      .catch(() => setAlertCount(0));
+  }, [user]);
+
   useEffect(() => {
     if (!loading && !user) router.push("/login");
     if (!loading && user && !localStorage.getItem("privyon_onboarded")) setShowTour(true);
@@ -42,7 +67,8 @@ function AppInner({ children }: { children: React.ReactNode }) {
     ]},
     { section: "Resultados", items: [
       { icon: FileText, label: t.reports, href: "/reports" },
-      { icon: Bell,     label: t.alerts,  href: "/alerts",  badge: 3   },
+      // ← FIX: badge agora vem do estado calculado, e só aparece se > 0
+      { icon: Bell,     label: t.alerts,  href: "/alerts",  badge: alertCount && alertCount > 0 ? alertCount : undefined },
     ]},
     { section: "Conta", items: [
       { icon: Settings, label: t.settings, href: "/settings" },

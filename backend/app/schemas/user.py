@@ -32,6 +32,16 @@ class UserResetPassword(BaseModel):
     new_password: str
 
 
+# ← ADD: fluxo de redefinição de senha por e-mail
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
 # ← ADD: schema para o usuário atualizar sua própria preferência visual
 class ThemeUpdate(BaseModel):
     accent: Optional[str] = None
