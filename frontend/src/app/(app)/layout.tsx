@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { LogOut, LayoutDashboard, FileCode2, Database, FileText, Bell, Settings, User, ChevronRight, Activity, ShieldAlert } from "lucide-react";
+import { LogOut, LayoutDashboard, FileCode2, Database, FileText, Bell, Settings, User, ChevronRight, Activity, ShieldAlert, Menu, X } from "lucide-react";
 import Cookies from "js-cookie";
 import { useAuth } from "@/context/AuthContext";
 import { LanguageProvider, useLang } from "@/context/LanguageContext";
-import { ThemeProvider } from "@/context/ThemeContext";
+import { ThemeProvider, useTheme, ACCENT_SWATCH_HEX } from "@/context/ThemeContext";
 import OnboardingTour from "@/components/OnboardingTour";
 import PrivyonLogo from "@/components/PrivyonLogo";
 import { DashboardSkeleton } from "@/components/Skeleton";
@@ -28,19 +28,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 function AppInner({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
   const { t } = useLang();
+  const { accent } = useTheme(); // ← ADD: cor de destaque escolhida pelo usuário
   const router = useRouter();
   const pathname = usePathname();
   const [showTour, setShowTour] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false); // ← ADD: estado do menu mobile
 
-  // ← FIX: badge de alertas agora é calculado de verdade, em vez de fixo em "3".
-  // Conta auditorias recentes com score < 70 (mesmo critério de "Necessita atenção"
-  // usado na tela de Relatórios). Para a conta demo, usa o tamanho real do dataset demo.
+  const accentHex = ACCENT_SWATCH_HEX[accent] || ACCENT_SWATCH_HEX.blue; // ← ADD
+
   const [alertCount, setAlertCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) return;
     if (user.email === DEMO_EMAIL) {
-      setAlertCount(3); // ← Reflete o dataset demo real (DEMO_ALERTS tem 3 itens)
+      setAlertCount(3);
       return;
     }
     const token = Cookies.get("access_token");
@@ -58,6 +59,9 @@ function AppInner({ children }: { children: React.ReactNode }) {
     if (!loading && user && !localStorage.getItem("privyon_onboarded")) setShowTour(true);
   }, [user, loading, router]);
 
+  // Fecha o menu mobile automaticamente ao trocar de página
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
+
   const NAV = [
     { section: "Principal", items: [
       { icon: LayoutDashboard, label: t.dashboard,  href: "/dashboard"  },
@@ -67,14 +71,12 @@ function AppInner({ children }: { children: React.ReactNode }) {
     ]},
     { section: "Resultados", items: [
       { icon: FileText, label: t.reports, href: "/reports" },
-      // ← FIX: badge agora vem do estado calculado, e só aparece se > 0
       { icon: Bell,     label: t.alerts,  href: "/alerts",  badge: alertCount && alertCount > 0 ? alertCount : undefined },
     ]},
     { section: "Conta", items: [
       { icon: Settings, label: t.settings, href: "/settings" },
       { icon: User,     label: t.profile,  href: "/profile"  },
     ]},
-    // Só aparece para admins
     ...(user?.role === "admin" ? [{
       section: "Sistema",
       items: [
@@ -85,73 +87,113 @@ function AppInner({ children }: { children: React.ReactNode }) {
 
   if (loading || !user) return (
     <div className="min-h-screen flex" style={{ background: "var(--bg2)" }}>
-      <aside className="hidden lg:flex flex-col flex-shrink-0" style={{ width: 225, background: "#0f1629" }}>
+      <aside className="hidden lg:flex flex-col flex-shrink-0" style={{ width: 225, background: "var(--sb)" }}>
         <div className="h-[58px] px-4 flex items-center gap-3" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          <div className="skeleton w-8 h-8 rounded-lg" style={{ background: "#1e2d5a" }} />
-          <div className="skeleton h-3 w-20" style={{ background: "#1e2d5a" }} />
+          <div className="skeleton w-8 h-8 rounded-lg" style={{ background: "var(--sb-act)" }} />
+          <div className="skeleton h-3 w-20" style={{ background: "var(--sb-act)" }} />
         </div>
         <div className="flex-1 p-3 flex flex-col gap-2">
-          {[...Array(8)].map((_, i) => <div key={i} className="skeleton h-9 rounded-lg" style={{ background: "#1e2d5a" }} />)}
+          {[...Array(8)].map((_, i) => <div key={i} className="skeleton h-9 rounded-lg" style={{ background: "var(--sb-act)" }} />)}
         </div>
       </aside>
       <DashboardSkeleton />
     </div>
   );
 
+  // Conteúdo da navegação — reaproveitado tanto na sidebar desktop quanto no drawer mobile
+  const navContent = (
+    <>
+      <nav className="flex-1 overflow-y-auto py-2 px-2.5">
+        {NAV.map(({ section, items }) => (
+          <div key={section}>
+            <p className="text-[9px] font-black uppercase px-2.5 py-2 mt-1"
+              style={{ color: "rgba(255,255,255,0.2)", letterSpacing: "0.12em" }}>{section}</p>
+            {items.map(({ icon: Icon, label, href, badge }) => {
+              const active = pathname === href || pathname.startsWith(href + "/");
+              return (
+                <Link key={href} href={href}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-0.5 text-[12px] font-semibold transition-all relative"
+                  style={{
+                    background: active ? "var(--sb-act)" : "transparent",
+                    color: active ? "#fff" : "rgba(255,255,255,0.5)",
+                  }}>
+                  {/* ← FIX: barra indicadora e cor ativa agora usam a cor de destaque do usuário */}
+                  {active && <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-sm" style={{ background: accentHex }} />}
+                  <Icon size={15} style={{ opacity: active ? 1 : 0.7, color: active ? accentHex : undefined }} />
+                  {label}
+                  {badge && <span className="ml-auto text-[9px] font-black text-white min-w-[17px] h-[17px] px-1 rounded-full flex items-center justify-center font-data" style={{ background: "var(--danger)" }}>{badge}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+      <div className="flex-shrink-0 p-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <Link href="/profile"
+          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-1.5 transition-colors"
+          style={{ color: "inherit" }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-extrabold text-white flex-shrink-0"
+            style={{ background: accentHex }}>
+            {user.name?.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[12px] font-bold text-white truncate">{user.name}</p>
+            <p className="text-[10px] capitalize" style={{ color: "rgba(255,255,255,0.35)" }}>{user.role}</p>
+          </div>
+          <ChevronRight size={12} style={{ color: "rgba(255,255,255,0.2)", marginLeft: "auto" }} />
+        </Link>
+        <button onClick={logout}
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-semibold transition-all"
+          style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "rgba(255,255,255,0.6)" }}>
+          <LogOut size={12} />{t.logout}
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen flex" style={{ background: "var(--bg2)" }}>
-      {/* Sidebar */}
+      {/* Sidebar — desktop */}
       <aside className="hidden lg:flex flex-col flex-shrink-0 h-screen sticky top-0"
-        style={{ width: 225, background: "#0f1629", borderRight: "1px solid rgba(255,255,255,0.04)" }}>
+        style={{ width: 225, background: "var(--sb)", borderRight: "1px solid rgba(255,255,255,0.04)" }}>
         <div className="h-[58px] flex items-center gap-2.5 px-4 flex-shrink-0"
           style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <PrivyonLogo height={28} />
-          <span className="ml-auto text-[9px] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>v1.0</span>
+          <span className="ml-auto text-[9px] font-data" style={{ color: "rgba(255,255,255,0.2)" }}>v1.0</span>
         </div>
-        <nav className="flex-1 overflow-y-auto py-2 px-2.5">
-          {NAV.map(({ section, items }) => (
-            <div key={section}>
-              <p className="text-[9px] font-black uppercase px-2.5 py-2 mt-1"
-                style={{ color: "rgba(255,255,255,0.2)", letterSpacing: "0.12em" }}>{section}</p>
-              {items.map(({ icon: Icon, label, href, badge }) => {
-                const active = pathname === href || pathname.startsWith(href + "/");
-                return (
-                  <Link key={href} href={href}
-                    className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-0.5 text-[12px] font-semibold transition-all relative"
-                    style={{ background: active ? "#1e2d5a" : "transparent", color: active ? "#fff" : "rgba(255,255,255,0.5)" }}>
-                    {active && <div className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-sm" style={{ background: "#3b82f6" }} />}
-                    <Icon size={15} style={{ opacity: active ? 1 : 0.7 }} />
-                    {label}
-                    {badge && <span className="ml-auto text-[9px] font-black text-white min-w-[17px] h-[17px] px-1 rounded-full flex items-center justify-center" style={{ background: "#ef4444" }}>{badge}</span>}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
-        </nav>
-        <div className="flex-shrink-0 p-2.5" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <Link href="/profile"
-            className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg mb-1.5 transition-colors"
-            style={{ color: "inherit" }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-extrabold text-white flex-shrink-0"
-              style={{ background: "linear-gradient(135deg,#3b82f6,#1d4ed8)" }}>
-              {user.name?.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0">
-              <p className="text-[12px] font-bold text-white truncate">{user.name}</p>
-              <p className="text-[10px] capitalize" style={{ color: "rgba(255,255,255,0.35)" }}>{user.role}</p>
-            </div>
-            <ChevronRight size={12} style={{ color: "rgba(255,255,255,0.2)", marginLeft: "auto" }} />
-          </Link>
-          <button onClick={logout}
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-semibold transition-all"
-            style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.15)", color: "rgba(255,255,255,0.35)" }}>
-            <LogOut size={12} />{t.logout}
-          </button>
-        </div>
+        {navContent}
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 page-enter">{children}</div>
+      {/* Topbar mobile com botão de menu — só aparece abaixo do breakpoint lg */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-[52px] flex items-center justify-between px-4"
+        style={{ background: "var(--sb)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <PrivyonLogo height={22} />
+        <button onClick={() => setMobileOpen(true)} aria-label="Abrir menu" className="p-2 -mr-2 text-white">
+          <Menu size={20} />
+        </button>
+      </div>
+
+      {/* Drawer mobile — desliza da esquerda, com overlay escurecendo o fundo */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-[260px] flex flex-col"
+            style={{ background: "var(--sb)" }}>
+            <div className="h-[52px] flex items-center justify-between px-4 flex-shrink-0"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <PrivyonLogo height={22} />
+              <button onClick={() => setMobileOpen(false)} aria-label="Fechar menu" className="p-2 -mr-2 text-white">
+                <X size={18} />
+              </button>
+            </div>
+            {navContent}
+          </aside>
+        </div>
+      )}
+
+      {/* Espaço reservado no topo no mobile, para não ficar atrás da topbar fixa */}
+      <div className="flex-1 flex flex-col min-w-0 page-enter pt-[52px] lg:pt-0">{children}</div>
+
       {showTour && <OnboardingTour onFinish={() => { localStorage.setItem("privyon_onboarded","1"); setShowTour(false); }} />}
     </div>
   );

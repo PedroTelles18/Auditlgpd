@@ -72,7 +72,7 @@ function Select({ value, onChange, options }: { value: string; onChange: (v: str
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
       className="text-[12px] font-semibold px-2.5 py-1.5 rounded-lg outline-none transition-all"
-      style={{ border: "1.5px solid #e2e8f4", background: "var(--bg2)", color: "var(--text)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      style={{ border: "1.5px solid #e2e8f4", background: "var(--bg2)", color: "var(--text)", fontFamily: "'Inter', sans-serif" }}>
       {options.map(({ value: v, label }) => <option key={v} value={v}>{label}</option>)}
     </select>
   );
@@ -267,7 +267,7 @@ export default function SettingsPage() {
                   onChange={e => set("groqKey", e.target.value)}
                   placeholder="gsk_..."
                   className="w-32 text-[12px] px-2.5 py-1.5 rounded-lg outline-none"
-                  style={{ border: "1.5px solid #e2e8f4", background: "var(--bg2)", color: "var(--text)", fontFamily: "'Plus Jakarta Sans', sans-serif" }} />
+                  style={{ border: "1.5px solid #e2e8f4", background: "var(--bg2)", color: "var(--text)", fontFamily: "'Inter', sans-serif" }} />
                 <button type="button" onClick={() => setShowKey(!showKey)} style={{ color: "var(--text-3)" }}>
                   {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
                 </button>

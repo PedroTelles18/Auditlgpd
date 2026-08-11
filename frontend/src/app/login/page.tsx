@@ -85,16 +85,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
 
       {/* Left panel */}
-      <div className="hidden lg:flex flex-col justify-between p-10 relative overflow-hidden flex-shrink-0"
-        style={{ width: 400, background: "#0f1629" }}>
-        {/* Grid bg */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,1) 1px,transparent 1px)", backgroundSize: "32px 32px" }} />
+      <div className="hidden lg:flex flex-col justify-between p-10 relative overflow-hidden flex-shrink-0 grid-texture"
+        style={{ width: 400, background: "var(--sb)" }}>
         {/* Glow */}
         <div className="absolute top-0 left-0 w-[400px] h-[400px] opacity-15 pointer-events-none"
-          style={{ background: "radial-gradient(circle at 30% 30%, #3b82f6, transparent 70%)" }} />
+          style={{ background: "radial-gradient(circle at 30% 30%, var(--accent), transparent 70%)" }} />
         <div className="absolute bottom-0 right-0 w-[300px] h-[300px] opacity-10 pointer-events-none"
-          style={{ background: "radial-gradient(circle at 70% 70%, #3b82f6, transparent 70%)" }} />
+          style={{ background: "radial-gradient(circle at 70% 70%, var(--accent), transparent 70%)" }} />
 
         {/* Logo */}
         <div className="z-10">
@@ -153,8 +150,8 @@ export default function LoginPage() {
               <input {...register("email")} type="email" placeholder="seu@email.com"
                 className="w-full px-3.5 py-2.5 rounded-lg text-[13px] outline-none transition-all"
                 style={{ border: "1.5px solid #e2e8f4", background: "#fff", color: "var(--text)",
-                  fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "#2563eb"; (e.target as HTMLInputElement).style.boxShadow = "0 0 0 3px rgba(37,99,235,0.1)"; }}
+                  fontFamily: "'Inter', sans-serif" }}
+                onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "var(--accent)"; (e.target as HTMLInputElement).style.boxShadow = "0 0 0 3px var(--accent-l)"; }}
                 onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = "var(--border)"; (e.target as HTMLInputElement).style.boxShadow = "none"; }}
               />
               {errors.email && <p className="text-[11px] mt-1" style={{ color: "#ef4444" }}>{errors.email.message}</p>}
@@ -168,8 +165,8 @@ export default function LoginPage() {
                 <input {...register("password")} type={showPw ? "text" : "password"} placeholder="••••••••"
                   className="w-full px-3.5 py-2.5 pr-10 rounded-lg text-[13px] outline-none transition-all"
                   style={{ border: "1.5px solid #e2e8f4", background: "#fff", color: "var(--text)",
-                    fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                  onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "#2563eb"; (e.target as HTMLInputElement).style.boxShadow = "0 0 0 3px rgba(37,99,235,0.1)"; }}
+                    fontFamily: "'Inter', sans-serif" }}
+                  onFocus={e => { (e.target as HTMLInputElement).style.borderColor = "var(--accent)"; (e.target as HTMLInputElement).style.boxShadow = "0 0 0 3px var(--accent-l)"; }}
                   onBlur={e  => { (e.target as HTMLInputElement).style.borderColor = "var(--border)"; (e.target as HTMLInputElement).style.boxShadow = "none"; }}
                 />
                 <button type="button" onClick={() => setShowPw(!showPw)}
@@ -183,7 +180,7 @@ export default function LoginPage() {
 
             <div className="flex justify-end mb-4">
               <button type="button" onClick={() => router.push("/forgot-password")} className="text-[12px] font-semibold transition-colors"
-                style={{ color: "#2563eb" }}>
+                style={{ color: "var(--accent)" }}>
                 Esqueci minha senha
               </button>
             </div>
@@ -203,13 +200,13 @@ export default function LoginPage() {
 
             <button type="submit" disabled={isSubmitting}
               className="w-full py-3 rounded-lg text-[14px] font-bold text-white mb-2.5 transition-all disabled:opacity-60"
-              style={{ background: "#2563eb", boxShadow: "0 4px 14px rgba(37,99,235,0.35)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              style={{ background: "var(--accent)", boxShadow: "0 4px 14px rgba(0,0,0,0.25)", fontFamily: "'Inter', sans-serif" }}>
               {isSubmitting ? <Loader2 size={16} className="animate-spin mx-auto" /> : "Entrar no Privyon →"}
             </button>
 
             <button type="button" onClick={loginDemo} disabled={demoLoad}
               className="w-full py-2.5 rounded-lg text-[13px] font-semibold mb-5 transition-colors disabled:opacity-60"
-              style={{ background: "#fff", color: "var(--text-2)", border: "1.5px solid #e2e8f4", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              style={{ background: "#fff", color: "var(--text-2)", border: "1.5px solid #e2e8f4", fontFamily: "'Inter', sans-serif" }}>
               {demoLoad ? <Loader2 size={14} className="animate-spin mx-auto" /> : "▶  Acessar conta demonstração"}
             </button>
           </form>
@@ -225,7 +222,7 @@ export default function LoginPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-[13px] font-bold mb-5 transition-all"
-            style={{ background: "#25D366", color: "#fff", boxShadow: "0 4px 14px rgba(37,211,102,0.35)", fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ background: "#25D366", color: "#fff", boxShadow: "0 4px 14px rgba(37,211,102,0.35)", fontFamily: "'Inter', sans-serif" }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="white">
               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
