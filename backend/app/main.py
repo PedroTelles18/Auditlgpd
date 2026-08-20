@@ -22,6 +22,7 @@ origins = [
     "https://auditlgpd.vercel.app",
     "https://privyon.com.br",
     "https://www.privyon.com.br",
+    "https://app.privyon.com.br",
     "http://localhost:3000",
 ]
 
